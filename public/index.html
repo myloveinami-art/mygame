@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Loy Krathong Live 9:16</title>
+    <title>Loy Krathong Live 9:16 + Background Music</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * {
@@ -20,7 +20,6 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
-        /* กรอบหลักรองรับสัดส่วน 9:16 แนวตั้ง */
         #game-screen {
             position: relative;
             width: 100vw;
@@ -29,7 +28,7 @@
             overflow: hidden;
         }
 
-        /* 🏆 ป้ายนับยอดกระทง ปรับให้กะทัดรัดเหมาะกับจอแนวตั้ง */
+        /* 🏆 ป้ายนับยอดกระทง */
         #counter-box {
             position: absolute;
             top: 12px;
@@ -46,10 +45,7 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 215, 0, 0.4);
             z-index: 100;
         }
-        #counter-box .title {
-            font-size: 11px;
-            color: #ffe066;
-        }
+        #counter-box .title { font-size: 11px; color: #ffe066; }
         #counter-box .number {
             font-size: 20px;
             font-weight: 800;
@@ -57,11 +53,9 @@
             text-shadow: 0 0 8px #ff9800;
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .counter-pop {
-            transform: scale(1.35);
-        }
+        .counter-pop { transform: scale(1.35); }
 
-        /* 🎛️ ปุ่มซ่อน/แสดง แผงควบคุม (เพื่อไม่ให้บังหน้าจอตอนไลฟ์จริง) */
+        /* 🎛️ ปุ่มเครื่องมือควบคุม */
         #toggle-panel-btn {
             position: absolute;
             top: 12px;
@@ -81,7 +75,7 @@
             position: absolute;
             top: 48px;
             left: 12px;
-            display: none; /* ซ่อนไว้เป็นค่าเริ่มต้น */
+            display: none;
             flex-direction: column;
             gap: 5px;
             z-index: 100;
@@ -91,10 +85,9 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             max-width: 160px;
         }
-        #test-panel.show {
-            display: flex;
-        }
-        .btn-tier {
+        #test-panel.show { display: flex; }
+        
+        .btn-control {
             padding: 6px 10px;
             color: white;
             border: none;
@@ -102,13 +95,11 @@
             cursor: pointer;
             font-size: 11px;
             font-weight: bold;
-            text-align: left;
-        }
-        #sound-toggle {
-            background: #ff9800;
-            color: #000;
             text-align: center;
         }
+        #bgm-toggle { background: #4caf50; }
+        #sound-toggle { background: #ff9800; color: #000; }
+        .btn-tier { text-align: left; }
 
         /* องค์ประกอบกระทงและของขวัญ */
         .gift-element {
@@ -120,10 +111,7 @@
             will-change: transform, opacity;
             pointer-events: none;
         }
-        .avatar {
-            border-radius: 50%;
-            object-fit: cover;
-        }
+        .avatar { border-radius: 50%; object-fit: cover; }
         .username {
             background: rgba(0, 0, 0, 0.75);
             color: #fff;
@@ -137,12 +125,9 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .icon-display {
-            margin-top: -10px;
-            line-height: 1;
-        }
+        .icon-display { margin-top: -10px; line-height: 1; }
 
-        /* 📱 Tier Animations ปรับสัดส่วนขนาดให้พอดีกับจอแนวตั้ง */
+        /* Tier Animations */
         .anim-t1 { animation: floatRiver 11s ease-out forwards, sway 3s ease-in-out infinite alternate; }
         .anim-t1 .avatar { width: 42px; height: 42px; border: 2px solid #fff; }
         .anim-t1 .icon-display { font-size: 32px; }
@@ -171,201 +156,7 @@
         .anim-t7 .avatar { width: 100px; height: 100px; border: 4px solid #fff; box-shadow: 0 0 35px #fff, 0 0 60px #ff00e5; }
         .anim-t7 .icon-display { font-size: 85px; filter: drop-shadow(0 0 30px #ff00e5); }
 
-        /* การเคลื่อนไหวในแนวดิ่งสำหรับจอ 9:16 */
         @keyframes floatRiver {
             0% { bottom: 8%; transform: scale(1); opacity: 1; }
             100% { bottom: 42%; transform: scale(0.3); opacity: 0; }
         }
-        @keyframes floatSky {
-            0% { bottom: 25%; transform: scale(1); opacity: 1; }
-            100% { bottom: 90%; transform: scale(0.35); opacity: 0; }
-        }
-        @keyframes firework {
-            0% { transform: scale(0.2); opacity: 0; }
-            40% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-        @keyframes ultimateUniverse {
-            0% { transform: scale(0.2) rotate(-20deg); opacity: 0; }
-            30% { transform: scale(1.3) rotate(0deg); opacity: 1; }
-            70% { transform: scale(1.4) rotate(10deg); opacity: 1; }
-            100% { transform: scale(1.8) rotate(20deg); opacity: 0; }
-        }
-        @keyframes sway {
-            0% { margin-left: -8px; }
-            100% { margin-left: 8px; }
-        }
-    </style>
-</head>
-<body>
-
-    <div id="game-screen">
-        <!-- ปุ่มเปิด/ปิดเมนูทดสอบ -->
-        <button id="toggle-panel-btn">⚙️ เครื่องมือ</button>
-
-        <!-- แผงปุ่มกดทดสอบ (ซ่อนไว้เป็น default) -->
-        <div id="test-panel">
-            <button id="sound-toggle" class="btn-tier">🔊 เสียง: เปิด</button>
-            <button class="btn-tier" data-tier="1" style="background: #8ecae6; color:#000;">T1: ดอกไม้จิ๋ว</button>
-            <button class="btn-tier" data-tier="2" style="background: #2a9d8f;">T2: กระทงตอง</button>
-            <button class="btn-tier" data-tier="3" style="background: #e9c46a; color:#000;">T3: กระทงทอง</button>
-            <button class="btn-tier" data-tier="4" style="background: #f4a261;">T4: โคมลอย</button>
-            <button class="btn-tier" data-tier="5" style="background: #e76f51;">T5: พลุฉลอง</button>
-            <button class="btn-tier" data-tier="6" style="background: #d62828;">T6: มังกรฟ้า</button>
-            <button class="btn-tier" data-tier="7" style="background: #9d4edd;">T7: จักรวาล</button>
-        </div>
-
-        <!-- ป้ายสรุปยอดกระทงรวม -->
-        <div id="counter-box">
-            <span style="font-size:16px;">🪷</span>
-            <div>
-                <div class="title">ร่วมลอยกระทง</div>
-                <div id="total-count" class="number">0</div>
-            </div>
-            <span class="title">ใบ</span>
-        </div>
-    </div>
-
-    <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            const socket = io();
-            const gameScreen = document.getElementById('game-screen');
-            const totalCountEl = document.getElementById('total-count');
-            const testPanel = document.getElementById('test-panel');
-            const toggleBtn = document.getElementById('toggle-panel-btn');
-            
-            let totalCount = 0;
-            let soundEnabled = true;
-
-            // ปุ่มกด ซ่อน/แสดง แผงทดสอบ
-            toggleBtn.addEventListener('click', () => {
-                testPanel.classList.toggle('show');
-            });
-
-            // Web Audio API
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-            function playSound(tier) {
-                if (!soundEnabled) return;
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-
-                const now = audioCtx.currentTime;
-
-                if (tier <= 3) {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(523.25, now);
-                    osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.3);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.5);
-                } else if (tier === 4) {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(200, now);
-                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.8);
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.8);
-                } else {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(120, now);
-                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
-                    gain.gain.setValueAtTime(0.6, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.6);
-                }
-            }
-
-            // ปุ่มเปิด/ปิดเสียง
-            const soundBtn = document.getElementById('sound-toggle');
-            soundBtn.addEventListener('click', () => {
-                soundEnabled = !soundEnabled;
-                soundBtn.innerHTML = soundEnabled ? '🔊 เสียง: เปิด' : '🔇 เสียง: ปิด';
-                soundBtn.style.background = soundEnabled ? '#ff9800' : '#757575';
-            });
-
-            const giftTierMap = {
-                'Rose': { tier: 1, icon: '🌸' },
-                'TikTok': { tier: 1, icon: '🪷' },
-                'Finger Heart': { tier: 2, icon: '🕯️' },
-                'Doughnut': { tier: 2, icon: '🪷' },
-                'Perfume': { tier: 3, icon: '✨' },
-                'Cap': { tier: 3, icon: '👑' },
-                'Paper Crane': { tier: 4, icon: '🏮' },
-                'Fireworks': { tier: 5, icon: '🎆' },
-                'Dragon': { tier: 6, icon: '🐉' },
-                'Universe': { tier: 7, icon: '🌌' }
-            };
-
-            socket.on('new_gift', (data) => {
-                renderGift(data.username, data.avatarUrl, data.giftName);
-            });
-
-            function renderGift(username, avatarUrl, giftName) {
-                const giftInfo = giftTierMap[giftName] || { tier: 1, icon: '🪷' };
-                const tier = giftInfo.tier;
-
-                totalCount++;
-                totalCountEl.innerText = totalCount.toLocaleString();
-                totalCountEl.classList.add('counter-pop');
-                setTimeout(() => totalCountEl.classList.remove('counter-pop'), 200);
-
-                playSound(tier);
-
-                const container = document.createElement('div');
-                container.className = `gift-element anim-t${tier}`;
-
-                if (tier <= 3) {
-                    const randomLeft = Math.floor(Math.random() * 65) + 15;
-                    container.style.left = `${randomLeft}%`;
-                } else if (tier === 4) {
-                    const randomLeft = Math.floor(Math.random() * 70) + 15;
-                    container.style.left = `${randomLeft}%`;
-                } else {
-                    const randomLeft = Math.floor(Math.random() * 50) + 25;
-                    const randomTop = Math.floor(Math.random() * 30) + 20;
-                    container.style.left = `${randomLeft}%`;
-                    container.style.top = `${randomTop}%`;
-                }
-
-                container.innerHTML = `
-                    <div class="username">${username}</div>
-                    <img class="avatar" src="${avatarUrl}" alt="${username}">
-                    <div class="icon-display">${giftInfo.icon}</div>
-                `;
-
-                gameScreen.appendChild(container);
-
-                const durations = [0, 11000, 13000, 15000, 13000, 5000, 6500, 9000];
-                setTimeout(() => { container.remove(); }, durations[tier] || 9000);
-            }
-
-            document.querySelectorAll('.btn-tier[data-tier]').forEach(button => {
-                button.addEventListener('click', () => {
-                    const selectedTier = parseInt(button.getAttribute('data-tier'));
-                    const mockUsers = ['พี่โอ๊ต', 'สายมู', 'น้องแป้ง', 'NARAPONZ'];
-                    const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-                    const avatar = 'https://p16-va.tiktokcdn.com/musically-maliva-obj/1665203342371846~c5_100x100.jpeg';
-                    const giftNames = ['', 'Rose', 'Finger Heart', 'Perfume', 'Paper Crane', 'Fireworks', 'Dragon', 'Universe'];
-
-                    renderGift(randomUser, avatar, giftNames[selectedTier]);
-                });
-            });
-        });
-    </script>
-</body>
-</html>
