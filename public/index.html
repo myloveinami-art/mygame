@@ -1,24 +1,9 @@
-window.addEventListener('DOMContentLoaded', () => {
-    // ตรวจสอบการเชื่อมต่อ Socket.io
-    let socket;
-    try {
-        socket = io();
-    } catch (e) {
-        console.error("Socket.io load error:", e);
-    }
-
-    const gameScreen = document.getElementById('game-screen');
-    const totalCountEl = document.getElementById('total-count');
-    const testPanel = document.getElementById('test-panel');
-    const toggleBtn = document.getElementById('toggle-panel-btn');
-    
-    // ... (โค้ดส่วนเดิมคงไว้ตามปกติ)
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Loy Krathong Live 9:16 + Background Music</title>
+    <title>Loy Krathong Live 9:16</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * {
@@ -31,25 +16,40 @@ window.addEventListener('DOMContentLoaded', () => {
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background-color: #000;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #030712;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
+        /* ฉากหลังคืนวันเพ็ญ (CSS Background แก้ปัญหาจอดำ) */
         #game-screen {
             position: relative;
             width: 100vw;
             height: 100vh;
-            background: url('bg.jpg') no-repeat center center/cover;
+            background: linear-gradient(to bottom, #050b18 0%, #101f42 50%, #0d2b45 80%, #051622 100%), url('bg.jpg') no-repeat center center/cover;
             overflow: hidden;
         }
 
-        /* 🏆 ป้ายนับยอดกระทง */
+        /* ดวงจันทร์คืนวันเพ็ญเรืองแสง */
+        .moon {
+            position: absolute;
+            top: 12%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, #fffdf0 20%, #ffea9f 60%, rgba(255, 234, 159, 0) 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(255, 234, 159, 0.8), 0 0 100px rgba(255, 200, 80, 0.4);
+            pointer-events: none;
+        }
+
+        /* 🏆 ป้ายนับยอดกระทงมุมขวาบน */
         #counter-box {
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(4px);
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
             border: 1.5px solid #ffd700;
             border-radius: 20px;
             padding: 6px 14px;
@@ -57,10 +57,13 @@ window.addEventListener('DOMContentLoaded', () => {
             display: flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 215, 0, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 215, 0, 0.3);
             z-index: 100;
         }
-        #counter-box .title { font-size: 11px; color: #ffe066; }
+        #counter-box .title {
+            font-size: 11px;
+            color: #ffe066;
+        }
         #counter-box .number {
             font-size: 20px;
             font-weight: 800;
@@ -68,110 +71,34 @@ window.addEventListener('DOMContentLoaded', () => {
             text-shadow: 0 0 8px #ff9800;
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .counter-pop { transform: scale(1.35); }
+        .counter-pop {
+            transform: scale(1.35);
+        }
 
-        /* 🎛️ ปุ่มเครื่องมือควบคุม */
+        /* 🎛️ ปุ่มเครื่องมือทดสอบ */
         #toggle-panel-btn {
             position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0, 0, 0, 0.65);
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.75);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
-            padding: 6px 12px;
+            padding: 7px 14px;
             border-radius: 20px;
             font-size: 11px;
             cursor: pointer;
             z-index: 101;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
         }
 
         #test-panel {
             position: absolute;
-            top: 48px;
-            left: 12px;
+            top: 52px;
+            left: 15px;
             display: none;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-width: 160px;
-        }
-        #test-panel.show { display: flex; }
-        
-        .btn-control {
-            padding: 6px 10px;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: bold;
-            text-align: center;
-        }
-        #bgm-toggle { background: #4caf50; }
-        #sound-toggle { background: #ff9800; color: #000; }
-        .btn-tier { text-align: left; }
-
-        /* องค์ประกอบกระทงและของขวัญ */
-        .gift-element {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 10;
-            will-change: transform, opacity;
-            pointer-events: none;
-        }
-        .avatar { border-radius: 50%; object-fit: cover; }
-        .username {
-            background: rgba(0, 0, 0, 0.75);
-            color: #fff;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            margin-bottom: 2px;
-            border: 1px solid #ffd700;
-            white-space: nowrap;
-            max-width: 100px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .icon-display { margin-top: -10px; line-height: 1; }
-
-        /* Tier Animations */
-        .anim-t1 { animation: floatRiver 11s ease-out forwards, sway 3s ease-in-out infinite alternate; }
-        .anim-t1 .avatar { width: 42px; height: 42px; border: 2px solid #fff; }
-        .anim-t1 .icon-display { font-size: 32px; }
-
-        .anim-t2 { animation: floatRiver 13s ease-out forwards, sway 3s ease-in-out infinite alternate; }
-        .anim-t2 .avatar { width: 52px; height: 52px; border: 2px solid #ffd700; box-shadow: 0 0 8px #ffd700; }
-        .anim-t2 .icon-display { font-size: 40px; filter: drop-shadow(0 0 6px #ff9900); }
-
-        .anim-t3 { animation: floatRiver 15s ease-out forwards, sway 2.5s ease-in-out infinite alternate; }
-        .anim-t3 .avatar { width: 62px; height: 62px; border: 3px solid #fff; box-shadow: 0 0 15px #ffea00; }
-        .anim-t3 .icon-display { font-size: 50px; filter: drop-shadow(0 0 12px #ffea00); }
-
-        .anim-t4 { animation: floatSky 13s ease-out forwards, sway 2s ease-in-out infinite alternate; }
-        .anim-t4 .avatar { width: 55px; height: 55px; border: 2.5px solid #ff9800; box-shadow: 0 0 12px #ff9800; }
-        .anim-t4 .icon-display { font-size: 42px; filter: drop-shadow(0 0 10px #ff9800); }
-
-        .anim-t5 { animation: firework 5s ease-out forwards; }
-        .anim-t5 .avatar { width: 70px; height: 70px; border: 3px solid #00e5ff; box-shadow: 0 0 20px #00e5ff; }
-        .anim-t5 .icon-display { font-size: 55px; filter: drop-shadow(0 0 15px #ff0055); }
-
-        .anim-t6 { animation: firework 6.5s ease-out forwards; }
-        .anim-t6 .avatar { width: 85px; height: 85px; border: 4px solid #ff0055; box-shadow: 0 0 25px #ff0055; }
-        .anim-t6 .icon-display { font-size: 70px; filter: drop-shadow(0 0 25px #ffea00); }
-
-        .anim-t7 { animation: ultimateUniverse 9s ease-out forwards; }
-        .anim-t7 .avatar { width: 100px; height: 100px; border: 4px solid #fff; box-shadow: 0 0 35px #fff, 0 0 60px #ff00e5; }
-        .anim-t7 .icon-display { font-size: 85px; filter: drop-shadow(0 0 30px #ff00e5); }
-
-        @keyframes floatRiver {
-            0% { bottom: 8%; transform: scale(1); opacity: 1; }
-            100% { bottom: 42%; transform: scale(0.3); opacity: 0; }
-        }
