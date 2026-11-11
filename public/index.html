@@ -20,7 +20,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* ฉากหลังคืนวันเพ็ญ (CSS Background แก้ปัญหาจอดำ) */
+        /* ฉากหลังคืนวันเพ็ญ */
         #game-screen {
             position: relative;
             width: 100vw;
@@ -102,3 +102,279 @@
             background: rgba(0, 0, 0, 0.9);
             padding: 12px;
             border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 150px;
+        }
+        #test-panel.show {
+            display: flex;
+        }
+        .btn-tier {
+            padding: 7px 10px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: left;
+        }
+        #sound-toggle {
+            background: #ff9800;
+            color: #000;
+            text-align: center;
+        }
+
+        /* องค์ประกอบกระทงและของขวัญ */
+        .gift-element {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+            will-change: transform, opacity;
+            pointer-events: none;
+        }
+        .avatar {
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .username {
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-bottom: 2px;
+            border: 1px solid #ffd700;
+            white-space: nowrap;
+            max-width: 90px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .icon-display {
+            margin-top: -10px;
+            line-height: 1;
+        }
+
+        /* Tier Animations */
+        .anim-t1 { animation: floatRiver 11s ease-out forwards, sway 3s ease-in-out infinite alternate; }
+        .anim-t1 .avatar { width: 42px; height: 42px; border: 2px solid #fff; }
+        .anim-t1 .icon-display { font-size: 32px; }
+
+        .anim-t2 { animation: floatRiver 13s ease-out forwards, sway 3s ease-in-out infinite alternate; }
+        .anim-t2 .avatar { width: 52px; height: 52px; border: 2px solid #ffd700; box-shadow: 0 0 8px #ffd700; }
+        .anim-t2 .icon-display { font-size: 40px; filter: drop-shadow(0 0 6px #ff9900); }
+
+        .anim-t3 { animation: floatRiver 15s ease-out forwards, sway 2.5s ease-in-out infinite alternate; }
+        .anim-t3 .avatar { width: 62px; height: 62px; border: 3px solid #fff; box-shadow: 0 0 15px #ffea00; }
+        .anim-t3 .icon-display { font-size: 50px; filter: drop-shadow(0 0 12px #ffea00); }
+
+        .anim-t4 { animation: floatSky 13s ease-out forwards, sway 2s ease-in-out infinite alternate; }
+        .anim-t4 .avatar { width: 55px; height: 55px; border: 2.5px solid #ff9800; box-shadow: 0 0 12px #ff9800; }
+        .anim-t4 .icon-display { font-size: 42px; filter: drop-shadow(0 0 10px #ff9800); }
+
+        .anim-t5 { animation: firework 5s ease-out forwards; }
+        .anim-t5 .avatar { width: 70px; height: 70px; border: 3px solid #00e5ff; box-shadow: 0 0 20px #00e5ff; }
+        .anim-t5 .icon-display { font-size: 55px; filter: drop-shadow(0 0 15px #ff0055); }
+
+        .anim-t6 { animation: firework 6.5s ease-out forwards; }
+        .anim-t6 .avatar { width: 85px; height: 85px; border: 4px solid #ff0055; box-shadow: 0 0 25px #ff0055; }
+        .anim-t6 .icon-display { font-size: 70px; filter: drop-shadow(0 0 25px #ffea00); }
+
+        .anim-t7 { animation: ultimateUniverse 9s ease-out forwards; }
+        .anim-t7 .avatar { width: 100px; height: 100px; border: 4px solid #fff; box-shadow: 0 0 35px #fff, 0 0 60px #ff00e5; }
+        .anim-t7 .icon-display { font-size: 85px; filter: drop-shadow(0 0 30px #ff00e5); }
+
+        @keyframes floatRiver {
+            0% { bottom: 5%; transform: scale(1); opacity: 1; }
+            100% { bottom: 45%; transform: scale(0.3); opacity: 0; }
+        }
+        @keyframes floatSky {
+            0% { bottom: 25%; transform: scale(1); opacity: 1; }
+            100% { bottom: 90%; transform: scale(0.35); opacity: 0; }
+        }
+        @keyframes firework {
+            0% { transform: scale(0.2); opacity: 0; }
+            40% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        @keyframes ultimateUniverse {
+            0% { transform: scale(0.2) rotate(-20deg); opacity: 0; }
+            30% { transform: scale(1.3) rotate(0deg); opacity: 1; }
+            70% { transform: scale(1.4) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1.8) rotate(20deg); opacity: 0; }
+        }
+        @keyframes sway {
+            0% { margin-left: -8px; }
+            100% { margin-left: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-screen">
+        <div class="moon"></div>
+        <button id="toggle-panel-btn">⚙️ เครื่องมือ</button>
+
+        <div id="test-panel">
+            <button id="sound-toggle" class="btn-tier">🔊 เสียง: เปิด</button>
+            <button class="btn-tier" data-tier="1" style="background: #8ecae6; color:#000;">T1: ดอกไม้จิ๋ว</button>
+            <button class="btn-tier" data-tier="2" style="background: #2a9d8f;">T2: กระทงตอง</button>
+            <button class="btn-tier" data-tier="3" style="background: #e9c46a; color:#000;">T3: กระทงทอง</button>
+            <button class="btn-tier" data-tier="4" style="background: #f4a261;">T4: โคมลอย</button>
+            <button class="btn-tier" data-tier="5" style="background: #e76f51;">T5: พลุฉลอง</button>
+            <button class="btn-tier" data-tier="6" style="background: #d62828;">T6: มังกรฟ้า</button>
+            <button class="btn-tier" data-tier="7" style="background: #9d4edd;">T7: จักรวาล</button>
+        </div>
+
+        <div id="counter-box">
+            <span style="font-size:16px;">🪷</span>
+            <div>
+                <div class="title">ร่วมลอยกระทง</div>
+                <div id="total-count" class="number">0</div>
+            </div>
+            <span class="title">ใบ</span>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const socket = typeof io !== 'undefined' ? io() : null;
+            const gameScreen = document.getElementById('game-screen');
+            const totalCountEl = document.getElementById('total-count');
+            const testPanel = document.getElementById('test-panel');
+            const toggleBtn = document.getElementById('toggle-panel-btn');
+            
+            let totalCount = 0;
+            let soundEnabled = true;
+
+            toggleBtn.addEventListener('click', () => {
+                testPanel.classList.toggle('show');
+            });
+
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            function playSound(tier) {
+                if (!soundEnabled) return;
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+
+                if (tier <= 3) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.3);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                } else if (tier === 4) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.8);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.8);
+                } else {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+                    gain.gain.setValueAtTime(0.6, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.6);
+                }
+            }
+
+            const soundBtn = document.getElementById('sound-toggle');
+            soundBtn.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                soundBtn.innerHTML = soundEnabled ? '🔊 เสียง: เปิด' : '🔇 เสียง: ปิด';
+                soundBtn.style.background = soundEnabled ? '#ff9800' : '#757575';
+            });
+
+            const giftTierMap = {
+                'Rose': { tier: 1, icon: '🌸' },
+                'TikTok': { tier: 1, icon: '🪷' },
+                'Finger Heart': { tier: 2, icon: '🕯️' },
+                'Doughnut': { tier: 2, icon: '🪷' },
+                'Perfume': { tier: 3, icon: '✨' },
+                'Cap': { tier: 3, icon: '👑' },
+                'Paper Crane': { tier: 4, icon: '🏮' },
+                'Fireworks': { tier: 5, icon: '🎆' },
+                'Dragon': { tier: 6, icon: '🐉' },
+                'Universe': { tier: 7, icon: '🌌' }
+            };
+
+            if (socket) {
+                socket.on('new_gift', (data) => {
+                    renderGift(data.username, data.avatarUrl, data.giftName);
+                });
+            }
+
+            function renderGift(username, avatarUrl, giftName) {
+                const giftInfo = giftTierMap[giftName] || { tier: 1, icon: '🪷' };
+                const tier = giftInfo.tier;
+
+                totalCount++;
+                totalCountEl.innerText = totalCount.toLocaleString();
+                totalCountEl.classList.add('counter-pop');
+                setTimeout(() => totalCountEl.classList.remove('counter-pop'), 200);
+
+                playSound(tier);
+
+                const container = document.createElement('div');
+                container.className = `gift-element anim-t${tier}`;
+
+                if (tier <= 3) {
+                    const randomLeft = Math.floor(Math.random() * 65) + 15;
+                    container.style.left = `${randomLeft}%`;
+                } else if (tier === 4) {
+                    const randomLeft = Math.floor(Math.random() * 70) + 15;
+                    container.style.left = `${randomLeft}%`;
+                } else {
+                    const randomLeft = Math.floor(Math.random() * 50) + 25;
+                    const randomTop = Math.floor(Math.random() * 30) + 20;
+                    container.style.left = `${randomLeft}%`;
+                    container.style.top = `${randomTop}%`;
+                }
+
+                container.innerHTML = `
+                    <div class="username">${username}</div>
+                    <img class="avatar" src="${avatarUrl}" alt="${username}">
+                    <div class="icon-display">${giftInfo.icon}</div>
+                `;
+
+                gameScreen.appendChild(container);
+
+                const durations = [0, 11000, 13000, 15000, 13000, 5000, 6500, 9000];
+                setTimeout(() => { container.remove(); }, durations[tier] || 9000);
+            }
+
+            document.querySelectorAll('.btn-tier[data-tier]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const selectedTier = parseInt(button.getAttribute('data-tier'));
+                    const mockUsers = ['พี่โอ๊ต', 'สายมู', 'น้องแป้ง', 'NARAPONZ'];
+                    const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
+                    const avatar = 'https://p16-va.tiktokcdn.com/musically-maliva-obj/1665203342371846~c5_100x100.jpeg';
+                    const giftNames = ['', 'Rose', 'Finger Heart', 'Perfume', 'Paper Crane', 'Fireworks', 'Dragon', 'Universe'];
+
+                    renderGift(randomUser, avatar, giftNames[selectedTier]);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
