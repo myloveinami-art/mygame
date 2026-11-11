@@ -16,28 +16,81 @@
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background-color: #000;
+            background-color: #020712;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* 🖼️ ฉากหลังวัดอรุณฯ คืนวันเพ็ญ (ฝังรูปภาพโดยตรง คมชัด โหลดไวแน่นอน) */
+        /* 🔘 หน้าจอต้อนรับเพื่อปลดล็อกเสียงบนมือถือ */
+        #start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(2, 7, 18, 0.92);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+        }
+        #start-btn {
+            margin-top: 24px;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #020712;
+            background: linear-gradient(135deg, #ffd700, #ff9800);
+            border: none;
+            border-radius: 30px;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+            cursor: pointer;
+        }
+
+        /* 🌕 ฉากหลังบรรยากาศคืนวันเพ็ญลอยกระทงสร้างด้วย CSS/SVG */
         #game-screen {
             position: relative;
             width: 100vw;
             height: 100vh;
-            background: #000 url('https://images.unsplash.com/photo-1563492065599-3520f775eeed?q=80&w=1000&auto=format&fit=crop') no-repeat center center/cover;
+            background: linear-gradient(to bottom, #020712 0%, #091936 45%, #052140 70%, #010c1c 100%);
             overflow: hidden;
         }
 
-        /* เงากระจายแสงด้านล่างเพื่อให้มองเห็นกระทงชัดเจน */
-        .river-overlay {
+        /* ดวงจันทร์คืนวันเพ็ญ */
+        .full-moon {
+            position: absolute;
+            top: 10%;
+            right: 12%;
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle, #fffdf0 60%, #ffe600 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 40px #ffea79, 0 0 80px rgba(255, 234, 121, 0.5);
+        }
+
+        /* ทิวทัศน์วัดและเจดีย์เงาสะท้อนยามค่ำคืน (Silhouette) */
+        .temple-silhouette {
+            position: absolute;
+            bottom: 40%;
+            width: 100%;
+            height: 120px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 300'%3E%3Cpath fill='%20051124' d='M0,300 L0,220 L50,220 L60,180 L70,220 L150,220 L180,100 L190,70 L200,100 L230,220 L350,220 L350,250 L400,250 L420,140 L430,90 L440,140 L460,250 L600,250 L630,60 L640,20 L650,60 L680,250 L800,250 L820,150 L830,110 L840,150 L860,250 L1000,250 L1030,120 L1040,80 L1050,120 L1080,250 L1200,250 L1200,300 Z'/%3E%3C/svg%3E") repeat-x bottom center/contain;
+            opacity: 0.85;
+        }
+
+        /* แม่น้ำสะท้อนแสงจันทร์และกระทง */
+        .river-area {
             position: absolute;
             bottom: 0;
-            left: 0;
             width: 100%;
-            height: 50%;
-            background: linear-gradient(to top, rgba(0, 10, 25, 0.7) 0%, rgba(0,0,0,0) 100%);
-            pointer-events: none;
+            height: 42%;
+            background: linear-gradient(to top, #020c1b 0%, #061c38 60%, rgba(9, 25, 54, 0.8) 100%);
+            border-top: 1px solid rgba(255, 215, 0, 0.2);
+            box-shadow: inset 0 10px 30px rgba(0, 0, 0, 0.8);
         }
 
         /* 🏆 ป้ายนับยอดกระทงมุมขวาบน */
@@ -45,7 +98,7 @@
             position: absolute;
             top: 15px;
             right: 15px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(2, 7, 18, 0.85);
             backdrop-filter: blur(6px);
             border: 1.5px solid #ffd700;
             border-radius: 20px;
@@ -77,7 +130,7 @@
             position: absolute;
             top: 15px;
             left: 15px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(2, 7, 18, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
             padding: 7px 14px;
@@ -96,7 +149,7 @@
             flex-direction: column;
             gap: 6px;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(2, 7, 18, 0.95);
             padding: 12px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -183,8 +236,8 @@
         .anim-t7 .icon-display { font-size: 85px; filter: drop-shadow(0 0 30px #ff00e5); }
 
         @keyframes floatRiver {
-            0% { bottom: 5%; transform: scale(1); opacity: 1; }
-            100% { bottom: 42%; transform: scale(0.3); opacity: 0; }
+            0% { bottom: 2%; transform: scale(1); opacity: 1; }
+            100% { bottom: 38%; transform: scale(0.3); opacity: 0; }
         }
         @keyframes floatSky {
             0% { bottom: 25%; transform: scale(1); opacity: 1; }
@@ -209,8 +262,18 @@
 </head>
 <body>
 
+    <!-- 🔘 หน้าจอกดเปิดเสียงออนไลน์ -->
+    <div id="start-overlay">
+        <h2>🪷 ไลฟ์สดคืนวันเพ็ญลอยกระทง 🪷</h2>
+        <p style="font-size: 13px; margin-top: 8px; color: #ffe066;">แตะปุ่มเพื่อเปิดเสียงดนตรีบรรยากาศสด</p>
+        <button id="start-btn">🎵 เริ่มต้นใช้งาน (เปิดเสียง)</button>
+    </div>
+
     <div id="game-screen">
-        <div class="river-overlay"></div>
+        <div class="full-moon"></div>
+        <div class="temple-silhouette"></div>
+        <div class="river-area"></div>
+
         <button id="toggle-panel-btn">⚙️ เครื่องมือ</button>
 
         <div id="test-panel">
@@ -241,58 +304,96 @@
             const totalCountEl = document.getElementById('total-count');
             const testPanel = document.getElementById('test-panel');
             const toggleBtn = document.getElementById('toggle-panel-btn');
+            const startOverlay = document.getElementById('start-overlay');
+            const startBtn = document.getElementById('start-btn');
             
             let totalCount = 0;
             let soundEnabled = true;
+
+            // 🎵 ระบบสังเคราะห์ดนตรีบรรยากาศลอยกระทงในตัวเครื่อง (Web Audio API Synthesizer)
+            let audioCtx;
+            let musicInterval;
+
+            function initAudio() {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+
+            function startLoyKrathongMusic() {
+                if (musicInterval || !soundEnabled) return;
+
+                // โน้ตทำนองบรรยากาศลอยกระทงแบบไทย (Pentatonic Scale: G, A, C, D, E)
+                const melodyNotes = [392.00, 440.00, 523.25, 587.33, 659.25, 783.99];
+                let index = 0;
+
+                musicInterval = setInterval(() => {
+                    if (!soundEnabled || !audioCtx) return;
+
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(melodyNotes[index % melodyNotes.length], audioCtx.currentTime);
+
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 1.2);
+
+                    index = (index + 1) % melodyNotes.length;
+                }, 600);
+            }
+
+            startBtn.addEventListener('click', () => {
+                startOverlay.style.display = 'none';
+                initAudio();
+                startLoyKrathongMusic();
+            });
 
             toggleBtn.addEventListener('click', () => {
                 testPanel.classList.toggle('show');
             });
 
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
             function playSound(tier) {
                 if (!soundEnabled) return;
-                if (audioCtx.state === 'suspended') audioCtx.resume();
+                initAudio();
                 const now = audioCtx.currentTime;
 
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
                 if (tier <= 3) {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(523.25, now);
                     osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.3);
-                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.setValueAtTime(0.4, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.5);
                 } else if (tier === 4) {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(200, now);
-                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.8);
-                    gain.gain.setValueAtTime(0.2, now);
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(900, now + 0.8);
+                    gain.gain.setValueAtTime(0.4, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.8);
                 } else {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(120, now);
-                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.6);
                     gain.gain.setValueAtTime(0.6, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.6);
                 }
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.8);
             }
 
             const soundBtn = document.getElementById('sound-toggle');
@@ -300,6 +401,13 @@
                 soundEnabled = !soundEnabled;
                 soundBtn.innerHTML = soundEnabled ? '🔊 เสียง: เปิด' : '🔇 เสียง: ปิด';
                 soundBtn.style.background = soundEnabled ? '#ff9800' : '#757575';
+                
+                if (soundEnabled) {
+                    startLoyKrathongMusic();
+                } else if (musicInterval) {
+                    clearInterval(musicInterval);
+                    musicInterval = null;
+                }
             });
 
             const giftTierMap = {
