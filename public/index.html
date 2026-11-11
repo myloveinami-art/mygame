@@ -16,11 +16,11 @@
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background-color: #000;
+            background-color: #020712;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* 🔘 หน้าจอต้อนรับเพื่อปลดล็อกเสียงบนมือถือ */
+        /* 🔘 หน้าจอต้อนรับกดเปิดเสียง */
         #start-overlay {
             position: absolute;
             top: 0;
@@ -51,24 +51,45 @@
             cursor: pointer;
         }
 
-        /* 🌕 ฉากหลังภาพกราฟิกวัดอรุณฯ คืนวันเพ็ญลอยกระทงคุณภาพสูง */
+        /* 🌕 ฉากหลังบรรยากาศคืนวันเพ็ญลอยกระทง (SVG Embedded 100%) */
         #game-screen {
             position: relative;
             width: 100vw;
             height: 100vh;
-            background: #000 url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Wat_Arun_night_Bangkok_Thailand.jpg/800px-Wat_Arun_night_Bangkok_Thailand.jpg') no-repeat center center/cover;
+            background: linear-gradient(to bottom, #030a16 0%, #0a1d3a 40%, #06172b 75%, #020b18 100%);
             overflow: hidden;
         }
 
-        /* เงากระจายแสงโทนแม่น้ำด้านล่างให้อ่านป้ายและเห็นกระทงชัดเจน */
-        .river-overlay {
+        /* ดวงจันทร์เต็มดวงเรืองแสง */
+        .moon {
+            position: absolute;
+            top: 12%;
+            right: 12%;
+            width: 85px;
+            height: 85px;
+            background: radial-gradient(circle, #fffdf0 50%, #ffe066 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #ffe066, 0 0 70px rgba(255, 224, 102, 0.4);
+        }
+
+        /* เงาสถาปัตยกรรมวัดอรุณฯ ยามค่ำคืน */
+        .wat-arun-svg {
+            position: absolute;
+            bottom: 38%;
+            width: 100%;
+            height: 160px;
+            pointer-events: none;
+        }
+
+        /* แม่น้ำเจ้าพระยาสะท้อนแสง */
+        .river-container {
             position: absolute;
             bottom: 0;
-            left: 0;
             width: 100%;
-            height: 45%;
-            background: linear-gradient(to top, rgba(1, 10, 28, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
-            pointer-events: none;
+            height: 40%;
+            background: linear-gradient(to top, #010814 0%, #061a33 70%, rgba(10, 29, 58, 0.5) 100%);
+            border-top: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
         }
 
         /* 🏆 ป้ายนับยอดกระทงมุมขวาบน */
@@ -76,7 +97,7 @@
             position: absolute;
             top: 15px;
             right: 15px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(2, 7, 18, 0.85);
             backdrop-filter: blur(6px);
             border: 1.5px solid #ffd700;
             border-radius: 20px;
@@ -108,7 +129,7 @@
             position: absolute;
             top: 15px;
             left: 15px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(2, 7, 18, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
             padding: 7px 14px;
@@ -127,7 +148,7 @@
             flex-direction: column;
             gap: 6px;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(2, 7, 18, 0.95);
             padding: 12px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -215,7 +236,7 @@
 
         @keyframes floatRiver {
             0% { bottom: 2%; transform: scale(1); opacity: 1; }
-            100% { bottom: 38%; transform: scale(0.3); opacity: 0; }
+            100% { bottom: 36%; transform: scale(0.3); opacity: 0; }
         }
         @keyframes floatSky {
             0% { bottom: 25%; transform: scale(1); opacity: 1; }
@@ -248,7 +269,15 @@
     </div>
 
     <div id="game-screen">
-        <div class="river-overlay"></div>
+        <div class="moon"></div>
+
+        <!-- กราฟิกเวกเตอร์วัดอรุณฯ ยามค่ำคืนฝังตรง -->
+        <svg class="wat-arun-svg" viewBox="0 0 1000 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#020914" opacity="0.9" d="M0,200 L0,170 L100,170 L150,170 L170,120 L180,80 L190,120 L210,170 L350,170 L460,170 L480,90 L495,30 L500,10 L505,30 L520,90 L540,170 L650,170 L790,170 L810,120 L820,80 L830,120 L850,170 L1000,170 L1000,200 Z"/>
+            <path fill="#ffb703" opacity="0.3" d="M495,30 L500,10 L505,30 L515,80 L485,80 Z"/>
+        </svg>
+
+        <div class="river-container"></div>
 
         <button id="toggle-panel-btn">⚙️ เครื่องมือ</button>
 
@@ -286,7 +315,7 @@
             let totalCount = 0;
             let soundEnabled = true;
 
-            // 🎵 ระบบสังเคราะห์ดนตรีบรรยากาศลอยกระทงในตัวเครื่อง (Web Audio API Synthesizer)
+            // 🎵 ระบบสังเคราะห์ดนตรีบรรยากาศลอยกระทง
             let audioCtx;
             let musicInterval;
 
@@ -355,106 +384,4 @@
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(300, now);
                     osc.frequency.exponentialRampToValueAtTime(900, now + 0.8);
-                    gain.gain.setValueAtTime(0.4, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-                } else {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.6);
-                    gain.gain.setValueAtTime(0.6, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
-                }
-
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now);
-                osc.stop(now + 0.8);
-            }
-
-            const soundBtn = document.getElementById('sound-toggle');
-            soundBtn.addEventListener('click', () => {
-                soundEnabled = !soundEnabled;
-                soundBtn.innerHTML = soundEnabled ? '🔊 เสียง: เปิด' : '🔇 เสียง: ปิด';
-                soundBtn.style.background = soundEnabled ? '#ff9800' : '#757575';
-                
-                if (soundEnabled) {
-                    startLoyKrathongMusic();
-                } else if (musicInterval) {
-                    clearInterval(musicInterval);
-                    musicInterval = null;
-                }
-            });
-
-            const giftTierMap = {
-                'Rose': { tier: 1, icon: '🌸' },
-                'TikTok': { tier: 1, icon: '🪷' },
-                'Finger Heart': { tier: 2, icon: '🕯️' },
-                'Doughnut': { tier: 2, icon: '🪷' },
-                'Perfume': { tier: 3, icon: '✨' },
-                'Cap': { tier: 3, icon: '👑' },
-                'Paper Crane': { tier: 4, icon: '🏮' },
-                'Fireworks': { tier: 5, icon: '🎆' },
-                'Dragon': { tier: 6, icon: '🐉' },
-                'Universe': { tier: 7, icon: '🌌' }
-            };
-
-            if (socket) {
-                socket.on('new_gift', (data) => {
-                    renderGift(data.username, data.avatarUrl, data.giftName);
-                });
-            }
-
-            function renderGift(username, avatarUrl, giftName) {
-                const giftInfo = giftTierMap[giftName] || { tier: 1, icon: '🪷' };
-                const tier = giftInfo.tier;
-
-                totalCount++;
-                totalCountEl.innerText = totalCount.toLocaleString();
-                totalCountEl.classList.add('counter-pop');
-                setTimeout(() => totalCountEl.classList.remove('counter-pop'), 200);
-
-                playSound(tier);
-
-                const container = document.createElement('div');
-                container.className = `gift-element anim-t${tier}`;
-
-                if (tier <= 3) {
-                    const randomLeft = Math.floor(Math.random() * 65) + 15;
-                    container.style.left = `${randomLeft}%`;
-                } else if (tier === 4) {
-                    const randomLeft = Math.floor(Math.random() * 70) + 15;
-                    container.style.left = `${randomLeft}%`;
-                } else {
-                    const randomLeft = Math.floor(Math.random() * 50) + 25;
-                    const randomTop = Math.floor(Math.random() * 30) + 20;
-                    container.style.left = `${randomLeft}%`;
-                    container.style.top = `${randomTop}%`;
-                }
-
-                container.innerHTML = `
-                    <div class="username">${username}</div>
-                    <img class="avatar" src="${avatarUrl}" alt="${username}">
-                    <div class="icon-display">${giftInfo.icon}</div>
-                `;
-
-                gameScreen.appendChild(container);
-
-                const durations = [0, 11000, 13000, 15000, 13000, 5000, 6500, 9000];
-                setTimeout(() => { container.remove(); }, durations[tier] || 9000);
-            }
-
-            document.querySelectorAll('.btn-tier[data-tier]').forEach(button => {
-                button.addEventListener('click', () => {
-                    const selectedTier = parseInt(button.getAttribute('data-tier'));
-                    const mockUsers = ['พี่โอ๊ต', 'สายมู', 'น้องแป้ง', 'NARAPONZ'];
-                    const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-                    const avatar = 'https://p16-va.tiktokcdn.com/musically-maliva-obj/1665203342371846~c5_100x100.jpeg';
-                    const giftNames = ['', 'Rose', 'Finger Heart', 'Perfume', 'Paper Crane', 'Fireworks', 'Dragon', 'Universe'];
-
-                    renderGift(randomUser, avatar, giftNames[selectedTier]);
-                });
-            });
-        });
-    </script>
-</body>
-</html>
+                    gain.gain.setValueAtTime(0
