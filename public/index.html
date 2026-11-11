@@ -1,3 +1,18 @@
+window.addEventListener('DOMContentLoaded', () => {
+    // ตรวจสอบการเชื่อมต่อ Socket.io
+    let socket;
+    try {
+        socket = io();
+    } catch (e) {
+        console.error("Socket.io load error:", e);
+    }
+
+    const gameScreen = document.getElementById('game-screen');
+    const totalCountEl = document.getElementById('total-count');
+    const testPanel = document.getElementById('test-panel');
+    const toggleBtn = document.getElementById('toggle-panel-btn');
+    
+    // ... (โค้ดส่วนเดิมคงไว้ตามปกติ)
 <!DOCTYPE html>
 <html lang="th">
 <head>
