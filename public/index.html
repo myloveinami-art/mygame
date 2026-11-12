@@ -1,1036 +1,1125 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Loy Krathong Live 9:16 - Wat Arun</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            background-color: #020712;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        #art-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-            display: block;
-        }
-
-        /* หน้าจอต้อนรับปลดล็อกเสียง */
-        #start-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: radial-gradient(circle at center, rgba(16, 33, 68, 0.95), rgba(3, 7, 18, 0.98));
-            backdrop-filter: blur(8px);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            text-align: center;
-            padding: 20px;
-        }
-        #start-btn {
-            margin-top: 24px;
-            padding: 15px 32px;
-            font-size: 17px;
-            font-weight: bold;
-            color: #04091a;
-            background: linear-gradient(135deg, #ffe066, #ff9800);
-            border: none;
-            border-radius: 30px;
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
-            cursor: pointer;
-        }
-
-        /* ป้ายนับยอดกระทงมุมขวาบน */
-        #counter-box {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(4, 9, 26, 0.85);
-            backdrop-filter: blur(6px);
-            border: 1.5px solid #ffd700;
-            border-radius: 20px;
-            padding: 6px 14px;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 12px rgba(255, 215, 0, 0.35);
-            z-index: 100;
-        }
-        #counter-box .title { font-size: 11px; color: #ffe066; }
-        #counter-box .number {
-            font-size: 20px;
-            font-weight: 800;
-            color: #ffd700;
-            text-shadow: 0 0 8px #ff9800;
-            transition: transform 0.2s;
-        }
-        .counter-pop { transform: scale(1.35); }
-
-        /* ป้ายสถานะ Socket.IO และคิว */
-        #status-bar {
-            position: absolute;
-            bottom: 12px;
-            left: 12px;
-            background: rgba(4, 9, 26, 0.78);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 14px;
-            padding: 4px 10px;
-            font-size: 10px;
-            color: #ddd;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            display: inline-block;
-            background: #ff9800;
-        }
-        .dot.online { background: #00e676; box-shadow: 0 0 6px #00e676; }
-        .dot.offline { background: #ff1744; box-shadow: 0 0 6px #ff1744; }
-
-        /* ปุ่มเครื่องมือทดสอบ */
-        #toggle-panel-btn {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(4, 9, 26, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #fff;
-            padding: 7px 14px;
-            border-radius: 20px;
-            font-size: 11px;
-            cursor: pointer;
-            z-index: 101;
-            backdrop-filter: blur(6px);
-        }
-        #test-panel {
-            position: absolute;
-            top: 52px;
-            left: 15px;
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            z-index: 100;
-            background: rgba(4, 9, 26, 0.92);
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            width: 165px;
-        }
-        #test-panel.show { display: flex; }
-        .btn-tier {
-            padding: 7px 10px;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: bold;
-            text-align: left;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#020712">
+  <title>ลอยกระทงวัดอรุณฯ Live 9:16</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #020712; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    #art-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+    button { font: inherit; cursor: pointer; }
+    #start-overlay {
+      position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; padding: 24px; text-align: center; color: white;
+      background: radial-gradient(circle at center, rgba(16,33,68,.96), rgba(3,7,18,.99));
+      backdrop-filter: blur(8px);
+    }
+    #start-overlay .symbol { font-size: clamp(42px, 12vw, 64px); margin-bottom: 12px; }
+    #start-overlay h1 { font-size: clamp(19px, 5vw, 26px); }
+    #start-overlay p { max-width: 340px; margin-top: 10px; color: #ffe6a0; font-size: 13px; line-height: 1.6; }
+    #start-btn {
+      margin-top: 24px; padding: 14px 26px; border: 0; border-radius: 30px; color: #171000;
+      background: linear-gradient(135deg, #ffe88a, #ff9800); font-weight: 800;
+      box-shadow: 0 0 25px rgba(255,215,0,.45);
+    }
+    .glass {
+      color: #fff; background: rgba(4,9,26,.84); border: 1px solid rgba(255,215,0,.5);
+      backdrop-filter: blur(7px); box-shadow: 0 4px 15px rgba(0,0,0,.35);
+    }
+    #counter-box {
+      position: fixed; z-index: 20; top: max(12px, env(safe-area-inset-top)); right: 12px;
+      display: flex; align-items: center; gap: 9px; padding: 7px 13px; border-radius: 18px;
+    }
+    #counter-box .title { color: #ffe066; font-size: 11px; }
+    #total-count { color: #ffd700; font-size: 20px; font-weight: 850; text-shadow: 0 0 8px #ff9800; }
+    .counter-pop { animation: pop .22s ease-out; }
+    @keyframes pop { 50% { transform: scale(1.3); } }
+    #toggle-panel-btn {
+      position: fixed; z-index: 30; top: max(12px, env(safe-area-inset-top)); left: 12px;
+      padding: 7px 13px; border-radius: 18px; color: white; background: rgba(4,9,26,.84);
+      border: 1px solid rgba(255,255,255,.28); backdrop-filter: blur(7px); font-size: 12px;
+    }
+    #test-panel {
+      position: fixed; z-index: 30; top: 54px; left: 12px; width: 176px; display: none;
+      flex-direction: column; gap: 6px; padding: 10px; border-radius: 12px;
+      background: rgba(4,9,26,.94); border: 1px solid rgba(255,215,0,.35);
+    }
+    #test-panel.show { display: flex; }
+    .btn-tier { padding: 8px 10px; border: 0; border-radius: 7px; color: white; font-size: 11px; font-weight: 750; text-align: left; }
+    #sound-toggle { text-align: center; background: #ff9800; color: #171000; }
+    #status-bar {
+      position: fixed; z-index: 20; left: 10px; bottom: max(10px, env(safe-area-inset-bottom));
+      display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 12px;
+      color: #eee; font-size: 10px; background: rgba(4,9,26,.78); border: 1px solid rgba(255,255,255,.18);
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #ff9800; flex: 0 0 auto; }
+    .dot.online { background: #00e676; box-shadow: 0 0 7px #00e676; }
+    .dot.offline { background: #ff1744; box-shadow: 0 0 7px #ff1744; }
+    @media (max-width: 380px) {
+      #counter-box { padding: 6px 9px; gap: 6px; }
+      #counter-box .title { font-size: 10px; }
+      #total-count { font-size: 17px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .counter-pop { animation-duration: .01ms; } }
+  </style>
 </head>
 <body>
+  <canvas id="art-canvas" aria-label="ภาพจำลองงานลอยกระทง"></canvas>
 
-    <div id="start-overlay">
-        <div style="font-size: 48px; margin-bottom: 10px;">🪷🌕🏯</div>
-        <h2>ลอยกระทงวัดอรุณฯ Live 9:16</h2>
-        <p style="font-size: 13px; margin-top: 8px; color: #ffe066;">แตะปุ่มด้านล่างเพื่อเปิดเพลงรำวงวันลอยกระทงและเริ่มงาน</p>
-        <button id="start-btn">🎵 เข้าสู่งานลอยกระทง</button>
-    </div>
+  <div id="start-overlay">
+    <div class="symbol">🪷🌕🏯</div>
+    <h1>ลอยกระทงวัดอรุณฯ Live 9:16</h1>
+    <p>แตะปุ่มด้านล่างเพื่อเริ่มงานและเปิดเสียงดนตรีประกอบ<br>สามารถปิดเสียงได้จากเมนูเครื่องมือ</p>
+    <button id="start-btn">🎵 เข้าสู่งานลอยกระทง</button>
+  </div>
 
-    <canvas id="art-canvas"></canvas>
+  <button id="toggle-panel-btn" type="button">⚙️ เครื่องมือ</button>
+  <div id="test-panel">
+    <button id="sound-toggle" class="btn-tier" type="button">🔊 เสียง: เปิด</button>
+    <button class="btn-tier" data-tier="1" style="background:#8ecae6;color:#10202a" type="button">T1: กระทงดอกไม้จิ๋ว</button>
+    <button class="btn-tier" data-tier="2" style="background:#2a9d8f" type="button">T2: กระทงใบตอง</button>
+    <button class="btn-tier" data-tier="3" style="background:#e9c46a;color:#241800" type="button">T3: กระทงทองคำ</button>
+    <button class="btn-tier" data-tier="4" style="background:#f4a261;color:#241000" type="button">T4: โคมลอยขึ้นฟ้า</button>
+    <button class="btn-tier" data-tier="5" style="background:#e76f51" type="button">T5: กระทงทอง + พลุ</button>
+    <button class="btn-tier" data-tier="6" style="background:#d62828" type="button">T6: มังกรฟ้า + พลุใหญ่</button>
+    <button class="btn-tier" data-tier="7" style="background:#9d4edd" type="button">T7: จักรวาลอลังการ</button>
+  </div>
 
-    <button id="toggle-panel-btn">⚙️ เครื่องมือ</button>
+  <div id="counter-box" class="glass">
+    <span style="font-size:17px">🪷</span>
+    <div><div class="title">ร่วมลอยกระทง</div><div id="total-count">0</div></div>
+    <span class="title">รายการ</span>
+  </div>
 
-    <div id="test-panel">
-        <button id="sound-toggle" class="btn-tier" style="background:#ff9800; color:#000; text-align:center;">🔊 เสียงเพลง: เปิด</button>
-        <button class="btn-tier" data-tier="1" style="background: #8ecae6; color:#000;">T1: กระทงดอกไม้จิ๋ว</button>
-        <button class="btn-tier" data-tier="2" style="background: #2a9d8f;">T2: กระทงใบตอง</button>
-        <button class="btn-tier" data-tier="3" style="background: #e9c46a; color:#000;">T3: กระทงทองคำ</button>
-        <button class="btn-tier" data-tier="4" style="background: #f4a261;">T4: โคมลอยขึ้นฟ้า</button>
-        <button class="btn-tier" data-tier="5" style="background: #e76f51;">T5: กระทงทอง + พลุ</button>
-        <button class="btn-tier" data-tier="6" style="background: #d62828;">T6: มังกรฟ้า + พลุใหญ่</button>
-        <button class="btn-tier" data-tier="7" style="background: #9d4edd;">T7: จักรวาลอลังการ</button>
-    </div>
+  <div id="status-bar">
+    <span id="conn-dot" class="dot"></span>
+    <span id="conn-text">กำลังตรวจสอบเซิร์ฟเวอร์...</span>
+    <span id="queue-text" style="color:#ffe066">| คิวรอ: 0</span>
+  </div>
 
-    <div id="counter-box">
-        <span style="font-size:16px;">🪷</span>
-        <div>
-            <div class="title">ร่วมลอยกระทง</div>
-            <div id="total-count" class="number">0</div>
-        </div>
-        <span class="title">ใบ</span>
-    </div>
+<script>
+(() => {
+  'use strict';
 
-    <div id="status-bar">
-        <span id="conn-dot" class="dot"></span>
-        <span id="conn-text">กำลังเชื่อมต่อ...</span>
-        <span id="queue-text" style="color:#ffe066;">| คิวรอ: 0</span>
-    </div>
+  const canvas = document.getElementById('art-canvas');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const $ = (id) => document.getElementById(id);
+  const totalCountEl = $('total-count');
+  const connDot = $('conn-dot');
+  const connText = $('conn-text');
+  const queueText = $('queue-text');
+  const testPanel = $('test-panel');
+  const soundBtn = $('sound-toggle');
 
-    <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            const canvas = document.getElementById('art-canvas');
-            const ctx = canvas.getContext('2d');
-            const totalCountEl = document.getElementById('total-count');
-            const startOverlay = document.getElementById('start-overlay');
-            const startBtn = document.getElementById('start-btn');
-            const toggleBtn = document.getElementById('toggle-panel-btn');
-            const testPanel = document.getElementById('test-panel');
-            const connDot = document.getElementById('conn-dot');
-            const connText = document.getElementById('conn-text');
-            const queueText = document.getElementById('queue-text');
+  const CONFIG = {
+    maxDpr: 2,
+    maxQueue: 300,
+    maxParticles: 450,
+    maxFloatingKrathongs: 180,
+    maxFloatingLanterns: 100,
+    dedupeMs: 12000,
+    walkSpeed: 0.19,
+    stepRate: 10.5
+  };
 
-            let W = window.innerWidth;
-            let H = window.innerHeight;
-            let totalCount = 0;
-            let soundEnabled = true;
+  let W = 1, H = 1, dpr = 1;
+  let totalCount = 0;
+  let animationId = 0;
+  let lastFrameTime = 0;
+  let started = false;
+  let soundEnabled = true;
+  let socket = null;
+  let fallbackEventCounter = 0;
 
-            // ==========================================
-            // 9. Responsive Canvas (รองรับหน้าจอมือถือ 9:16 และ Retina)
-            // ==========================================
-            function resizeCanvas() {
-                const dpr = Math.min(window.devicePixelRatio || 1, 2);
-                W = window.innerWidth;
-                H = window.innerHeight;
-                canvas.width = W * dpr;
-                canvas.height = H * dpr;
-                canvas.style.width = W + 'px';
-                canvas.style.height = H + 'px';
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const PIER_BRIDGES_X = [0.16, 0.33, 0.50, 0.67, 0.84];
+  const PIER_DECK_Y = 0.73;
+  const PIER_WATER_Y = 0.575;
+  const bridgeReservations = new Set();
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    W = Math.max(1, rect.width);
+    H = Math.max(1, rect.height);
+    dpr = Math.min(window.devicePixelRatio || 1, CONFIG.maxDpr);
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resizeCanvas, { passive: true });
+  resizeCanvas();
+
+  const bgImg = new Image();
+  let bgLoaded = false;
+  bgImg.onload = () => { bgLoaded = true; };
+  bgImg.onerror = () => { bgLoaded = false; };
+
+  function drawFallbackBackground(time) {
+    const skyBottom = H * 0.455;
+    const sky = ctx.createLinearGradient(0, 0, 0, skyBottom);
+    sky.addColorStop(0, '#05091d');
+    sky.addColorStop(.52, '#101d43');
+    sky.addColorStop(1, '#53375a');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, skyBottom);
+
+    for (let i = 0; i < 42; i++) {
+      const sx = ((i * 73.7) % 997) / 997 * W;
+      const sy = ((i * 37.1) % 419) / 419 * skyBottom * .78;
+      const twinkle = .35 + (Math.sin(time * .002 + i * 1.7) + 1) * .25;
+      ctx.fillStyle = `rgba(255,242,202,${twinkle})`;
+      ctx.beginPath();
+      ctx.arc(sx, sy, i % 5 === 0 ? 1.5 : .8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const moonX = W * .79, moonY = H * .105, moonR = Math.min(W, H) * .052;
+    const halo = ctx.createRadialGradient(moonX, moonY, moonR * .25, moonX, moonY, moonR * 3.3);
+    halo.addColorStop(0, 'rgba(255,238,180,.30)');
+    halo.addColorStop(1, 'rgba(255,220,150,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, moonR * 3.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff3c9';
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#10172a';
+    ctx.fillRect(0, H * .345, W, H * .11);
+    for (let i = 0; i < 11; i++) {
+      const x = i * W / 10;
+      ctx.beginPath();
+      ctx.arc(x, H * (.34 + (i % 3) * .012), W * .055, Math.PI, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const cx = W * .5;
+    const templeW = W * .72;
+    const templeX = cx - templeW / 2;
+    const gold = ctx.createLinearGradient(0, H * .20, 0, H * .442);
+    gold.addColorStop(0, '#fff0a6');
+    gold.addColorStop(.45, '#d9a642');
+    gold.addColorStop(1, '#75431e');
+
+    ctx.fillStyle = '#6d3b2b';
+    ctx.fillRect(templeX + templeW * .08, H * .385, templeW * .84, H * .058);
+    ctx.fillStyle = '#d7a54b';
+    ctx.fillRect(templeX + templeW * .04, H * .382, templeW * .92, H * .012);
+    ctx.fillStyle = '#4b2a2b';
+    ctx.fillRect(templeX + templeW * .19, H * .325, templeW * .62, H * .06);
+
+    ctx.fillStyle = '#f1d89a';
+    ctx.fillRect(templeX + templeW * .21, H * .285, templeW * .58, H * .105);
+    ctx.fillStyle = '#8f2538';
+    ctx.fillRect(templeX + templeW * .245, H * .31, templeW * .51, H * .075);
+
+    for (let i = 0; i < 7; i++) {
+      const x = templeX + templeW * (.25 + i * .083);
+      ctx.fillStyle = '#f7d98c';
+      ctx.fillRect(x, H * .286, Math.max(2, W * .009), H * .098);
+      ctx.fillStyle = '#fff0bd';
+      ctx.fillRect(x - 1, H * .286, Math.max(3, W * .012), H * .006);
+    }
+
+    ctx.fillStyle = '#24152d';
+    ctx.beginPath();
+    ctx.roundRect(cx - W * .055, H * .327, W * .11, H * .058, W * .025);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,202,91,.7)';
+    ctx.fillRect(cx - W * .036, H * .343, W * .072, H * .042);
+
+    function roof(y, half, rise, colorA, colorB) {
+      const g = ctx.createLinearGradient(0, y - rise, 0, y + 5);
+      g.addColorStop(0, colorA);
+      g.addColorStop(1, colorB);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(cx - half, y);
+      ctx.lineTo(cx - half * .72, y - rise * .42);
+      ctx.lineTo(cx, y - rise);
+      ctx.lineTo(cx + half * .72, y - rise * .42);
+      ctx.lineTo(cx + half, y);
+      ctx.lineTo(cx + half * .82, y + H * .012);
+      ctx.lineTo(cx, y - rise * .69);
+      ctx.lineTo(cx - half * .82, y + H * .012);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#ffe8a0';
+      ctx.lineWidth = Math.max(1, W * .006);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#ffe9a6';
+      ctx.lineWidth = Math.max(1, W * .004);
+      ctx.beginPath();
+      ctx.moveTo(cx - half, y);
+      ctx.quadraticCurveTo(cx - half * 1.08, y - rise * .12, cx - half * 1.08, y - rise * .42);
+      ctx.moveTo(cx + half, y);
+      ctx.quadraticCurveTo(cx + half * 1.08, y - rise * .12, cx + half * 1.08, y - rise * .42);
+      ctx.stroke();
+    }
+
+    roof(H * .292, templeW * .48, H * .105, '#ffe9a0', '#a45c21');
+    roof(H * .245, templeW * .34, H * .083, '#fff0b3', '#a66a28');
+    roof(H * .205, templeW * .20, H * .065, '#ffe6a0', '#8d4c20');
+
+    ctx.fillStyle = gold;
+    ctx.beginPath();
+    ctx.moveTo(cx - W * .035, H * .205);
+    ctx.lineTo(cx, H * .105);
+    ctx.lineTo(cx + W * .035, H * .205);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#ffe7a1';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffe8a0';
+    ctx.beginPath();
+    ctx.moveTo(cx - 2, H * .12);
+    ctx.lineTo(cx, H * .065);
+    ctx.lineTo(cx + 2, H * .12);
+    ctx.closePath();
+    ctx.fill();
+
+    for (const side of [-1, 1]) {
+      const sx = cx + side * W * .27;
+      ctx.fillStyle = '#c48b3d';
+      ctx.beginPath();
+      ctx.moveTo(sx - W * .045, H * .31);
+      ctx.lineTo(sx, H * .19);
+      ctx.lineTo(sx + W * .045, H * .31);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#ffe2a0';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#ffe8a0';
+      ctx.beginPath();
+      ctx.moveTo(sx - 2, H * .20);
+      ctx.lineTo(sx, H * .15);
+      ctx.lineTo(sx + 2, H * .20);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    const plaqueY = H * .405;
+    ctx.fillStyle = 'rgba(35,12,34,.88)';
+    ctx.strokeStyle = '#e9bd65';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(W * .25, plaqueY, W * .5, H * .031, 7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffe9ae';
+    ctx.textAlign = 'center';
+    ctx.font = `bold ${Math.max(10, W * .026)}px sans-serif`;
+    ctx.fillText('มหัศจรรย์คืนวันเพ็ญ • เทศกาลลอยกระทง', cx, plaqueY + H * .021);
+
+    const riverTop = H * .455;
+    const river = ctx.createLinearGradient(0, riverTop, 0, H * PIER_DECK_Y);
+    river.addColorStop(0, '#182b51');
+    river.addColorStop(.45, '#0b3150');
+    river.addColorStop(1, '#061b32');
+    ctx.fillStyle = river;
+    ctx.fillRect(0, riverTop, W, H * PIER_DECK_Y - riverTop);
+
+    ctx.save();
+    ctx.globalAlpha = .20;
+    for (let i = 0; i < 24; i++) {
+      const y = H * (.465 + i * .011);
+      const width = W * (.08 + i * .018);
+      const x = cx - width / 2 + Math.sin(time * .0015 + i) * W * .012;
+      ctx.strokeStyle = i % 3 === 0 ? '#ffd77a' : '#9fc9ed';
+      ctx.lineWidth = 1 + (i % 4) * .35;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + width, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    for (let i = 0; i < 9; i++) {
+      const x = ((i * 127 + time * (.004 + (i % 3) * .001)) % (W + 40)) - 20;
+      const y = H * (.49 + (i % 4) * .045);
+      const pulse = .65 + Math.sin(time * .004 + i) * .2;
+      ctx.save();
+      ctx.globalAlpha = pulse;
+      ctx.fillStyle = 'rgba(255,177,65,.18)';
+      ctx.beginPath();
+      ctx.arc(x, y - 3, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#3d9868';
+      ctx.beginPath();
+      ctx.ellipse(x, y, 8, 3.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffcf70';
+      ctx.beginPath();
+      ctx.arc(x, y - 3, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (let i = 0; i < 4; i++) {
+      const lx = W * (.12 + i * .24) + Math.sin(time * .0006 + i) * 5;
+      const ly = H * (.12 + (i % 2) * .08) - ((time * .008 + i * 40) % (H * .08));
+      ctx.fillStyle = 'rgba(255,175,65,.16)';
+      ctx.beginPath();
+      ctx.arc(lx, ly, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffb347';
+      ctx.beginPath();
+      ctx.roundRect(lx - 4, ly - 7, 8, 12, 3);
+      ctx.fill();
+    }
+  }
+
+  function drawBackgroundAndPier(time) {
+    if (bgLoaded && bgImg.naturalWidth > 0) {
+      const imageRatio = bgImg.naturalWidth / bgImg.naturalHeight;
+      const canvasRatio = W / H;
+      let dw, dh, dx, dy;
+      if (canvasRatio > imageRatio) {
+        dw = W; dh = W / imageRatio; dx = 0; dy = (H - dh) / 2;
+      } else {
+        dh = H; dw = H * imageRatio; dx = (W - dw) / 2; dy = 0;
+      }
+      ctx.drawImage(bgImg, dx, dy, dw, dh);
+    } else {
+      drawFallbackBackground(time);
+    }
+
+    const deckY = H * PIER_DECK_Y;
+    const wood = ctx.createLinearGradient(0, deckY, 0, H);
+    wood.addColorStop(0, '#2c1e14');
+    wood.addColorStop(.35, '#1c120b');
+    wood.addColorStop(1, '#0d0704');
+    ctx.fillStyle = wood;
+    ctx.fillRect(0, deckY, W, H - deckY);
+
+    ctx.strokeStyle = 'rgba(255,215,0,.12)';
+    ctx.lineWidth = 1;
+    for (let y = deckY + 18; y < H; y += 22) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#d4a338';
+    ctx.fillRect(0, deckY - 3, W, 4);
+
+    const topY = H * PIER_WATER_Y;
+    const halfW = Math.max(18, W * .042);
+    PIER_BRIDGES_X.forEach((cx) => {
+      const px = cx * W;
+      ctx.fillStyle = 'rgba(0,0,0,.42)';
+      ctx.fillRect(px - halfW - 3, topY, (halfW + 3) * 2, deckY - topY + 6);
+
+      const bridge = ctx.createLinearGradient(px - halfW, 0, px + halfW, 0);
+      bridge.addColorStop(0, '#3d2819');
+      bridge.addColorStop(.5, '#5c3e27');
+      bridge.addColorStop(1, '#2c1c11');
+      ctx.fillStyle = bridge;
+      ctx.fillRect(px - halfW, topY, halfW * 2, deckY - topY);
+
+      ctx.fillStyle = '#ffd700';
+      ctx.fillRect(px - halfW - 2, topY, 3, deckY - topY);
+      ctx.fillRect(px + halfW - 1, topY, 3, deckY - topY);
+      ctx.fillStyle = '#ffb703';
+      ctx.fillRect(px - halfW - 2, topY - 3, (halfW + 2) * 2, 4);
+
+      const glow = .75 + Math.sin(time * .006 + cx * 10) * .25;
+      ctx.fillStyle = `rgba(255,205,60,${glow})`;
+      ctx.beginPath();
+      ctx.arc(px - halfW, topY - 7, 5, 0, Math.PI * 2);
+      ctx.arc(px + halfW, topY - 7, 5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  const tops = ['#ff595e','#ffca3a','#ff70a6','#4cc9f0','#8ac926','#f77f00','#9d4edd','#00bbf9','#f15bb5','#fee440'];
+  const bottoms = ['#6a040f','#3a0ca3','#8338ec','#1d3557','#2b2d42','#540b0e','#38b000','#0077b6','#7209b7','#d90429'];
+  const skinTones = ['#ffdbac','#f1c27d','#e0ac69','#c68642','#8d5524'];
+  const hairColors = ['#1a1a1a','#2c1a0e','#3d2314','#4a4a4a','#e6e6e6'];
+
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  function generateRandomStyle() {
+    const female = Math.random() > .45;
+    const elder = Math.random() < .15;
+    return {
+      gender: female ? 'F' : 'M',
+      isChild: Math.random() < .15,
+      top: pick(tops),
+      bottom: pick(bottoms),
+      skin: pick(skinTones),
+      hair: elder ? '#e6e6e6' : pick(hairColors)
+    };
+  }
+
+  const seatRows = [.78, .85, .92];
+  const seatCols = [.09,.18,.27,.36,.45,.55,.64,.73,.82,.91];
+  const characters = [];
+
+  function nearestAvailableBridge(x) {
+    const free = PIER_BRIDGES_X.filter((bridgeX) => !bridgeReservations.has(bridgeX));
+    if (!free.length) return null;
+    return free.reduce((best, value) =>
+      Math.abs(value - x) < Math.abs(best - x) ? value : best, free[0]);
+  }
+
+  seatRows.forEach((ry) => seatCols.forEach((cx) => {
+    const homeX = cx + (Math.random() - .5) * .015;
+    const homeY = ry + (Math.random() - .5) * .012;
+    characters.push({
+      homeX, homeY, x: homeX, y: homeY, bridgeX: null,
+      state: 'idle', walkPhase: Math.random() * Math.PI * 2,
+      heldTier: 0, username: '', style: generateRandomStyle()
+    });
+  }));
+
+  function drawKrathongArt(x, y, tier, scale, time) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    const glowR = tier >= 3 ? 32 : 19;
+    const glow = ctx.createRadialGradient(0, -8, 2, 0, -8, glowR);
+    glow.addColorStop(0, tier >= 3 ? 'rgba(255,225,80,.8)' : 'rgba(255,190,60,.55)');
+    glow.addColorStop(1, 'rgba(255,180,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, -8, glowR, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (tier === 1) {
+      ctx.fillStyle = '#40916c';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 12, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff758f';
+      ctx.beginPath();
+      ctx.arc(0, -4, 6, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (tier === 2) {
+      ctx.fillStyle = '#2d6a4f';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 17, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffb703';
+      for (let a = -12; a <= 12; a += 6) {
+        ctx.beginPath();
+        ctx.arc(a, -4, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      const gold = ctx.createLinearGradient(0, -14, 0, 8);
+      gold.addColorStop(0, '#fff3a6');
+      gold.addColorStop(.5, '#ffd700');
+      gold.addColorStop(1, '#d97706');
+      ctx.fillStyle = gold;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 22, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff9f1c';
+      ctx.beginPath();
+      ctx.moveTo(-16,-2);
+      ctx.lineTo(0,-14);
+      ctx.lineTo(16,-2);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(-1.5, -16, 3, 10);
+    ctx.fillStyle = '#ffea00';
+    ctx.beginPath();
+    ctx.ellipse(Math.sin(time * .02) * .5, -19, 3, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLanternArt(x, y, scale, time) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 30);
+    glow.addColorStop(0, 'rgba(255,180,50,.85)');
+    glow.addColorStop(1, 'rgba(255,120,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, 30, 0, Math.PI * 2);
+    ctx.fill();
+
+    const body = ctx.createLinearGradient(0, -18, 0, 14);
+    body.addColorStop(0, '#ff9f1c');
+    body.addColorStop(1, '#fff3b0');
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(-13,-16);
+    ctx.lineTo(13,-16);
+    ctx.lineTo(9,14);
+    ctx.lineTo(-9,14);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,255,255,.65)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-9,-10);
+    ctx.lineTo(9,-10);
+    ctx.moveTo(-8,0);
+    ctx.lineTo(8,0);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCharacter(ch, time) {
+    const px = ch.x * W, py = ch.y * H;
+    let scale = .56 + (ch.y - PIER_WATER_Y) * .78;
+    if (ch.style.isChild) scale *= .78;
+
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.scale(scale, scale);
+
+    const moving = ch.state !== 'idle';
+    const bob = moving ? Math.abs(Math.sin(ch.walkPhase)) * -4 : Math.sin(time * .003 + ch.walkPhase) * 1.1;
+    const swing = moving ? Math.sin(ch.walkPhase) * 6 : 0;
+
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    ctx.beginPath();
+    ctx.ellipse(0,0,17,5.5,0,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.translate(0, bob);
+    ctx.fillStyle = ch.style.skin;
+    ctx.beginPath();
+    ctx.roundRect(-8.5,-21+swing*.5,5.5,19,3);
+    ctx.roundRect(3,-21-swing*.5,5.5,19,3);
+    ctx.fill();
+
+    ctx.fillStyle = ch.style.bottom;
+    ctx.beginPath();
+    ctx.moveTo(-12.5,-40);
+    ctx.lineTo(12.5,-40);
+    ctx.lineTo(14.5,-17);
+    ctx.lineTo(-14.5,-17);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-12.5,-42,25,3);
+    ctx.fillStyle = ch.style.top;
+    ctx.beginPath();
+    ctx.roundRect(-13.5,-64,27,23,7);
+    ctx.fill();
+
+    if (ch.style.gender === 'F') {
+      ctx.fillStyle = 'rgba(255,255,255,.38)';
+      ctx.beginPath();
+      ctx.moveTo(-10,-64);
+      ctx.lineTo(-2,-64);
+      ctx.lineTo(11,-31);
+      ctx.lineTo(4,-31);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.fillStyle = ch.style.skin;
+    ctx.beginPath();
+    ctx.roundRect(-17.5,-61,5,18,2.5);
+    ctx.roundRect(12.5,-61,5,18,2.5);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0,-80,16,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = ch.style.hair;
+    ctx.beginPath();
+    ctx.arc(0,-82,16.8,Math.PI*.85,Math.PI*2.15);
+    ctx.quadraticCurveTo(16,-68,0,-70);
+    ctx.quadraticCurveTo(-16,-68,-16.8,-82);
+    ctx.fill();
+
+    if (ch.style.gender === 'F') {
+      ctx.beginPath();
+      ctx.arc(0,-98,7,0,Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-10,-100);
+      ctx.lineTo(10,-96);
+      ctx.stroke();
+    }
+
+    if (ch.heldTier > 0) {
+      if (ch.heldTier === 4) drawLanternArt(0,-66,.62,time);
+      else drawKrathongArt(0,-52,ch.heldTier,.72,time);
+    }
+
+    if (ch.username) {
+      const name = ch.username.slice(0,18);
+      const tagY = ch.style.gender === 'F' ? -114 : -106;
+      ctx.font = 'bold 10.5px sans-serif';
+      const textW = Math.min(150, Math.max(52, ctx.measureText(name).width + 16));
+      ctx.fillStyle = 'rgba(0,0,0,.85)';
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(-textW/2,tagY-15,textW,17,8.5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText(name,0,tagY-3);
+    }
+    ctx.restore();
+  }
+
+  const floatingKrathongs = [];
+  const floatingLanterns = [];
+  const fireworkParticles = [];
+
+  function spawnFirework(x, y, color) {
+    const room = CONFIG.maxParticles - fireworkParticles.length;
+    if (room <= 0) return;
+    const count = Math.min(36, room);
+    for (let i = 0; i < count; i++) {
+      const angle = Math.PI * 2 * i / count;
+      const speed = Math.random() * 2.5 + 1.1;
+      fireworkParticles.push({
+        x, y,
+        vx: Math.cos(angle)*speed,
+        vy: Math.sin(angle)*speed,
+        alpha: 1,
+        decay: Math.random()*.012 + .012,
+        color
+      });
+    }
+  }
+
+  function drawAndUpdateParticles(dt) {
+    const step = Math.min(dt, .05) * 60;
+    for (let i = fireworkParticles.length - 1; i >= 0; i--) {
+      const p = fireworkParticles[i];
+      p.x += p.vx * step;
+      p.y += p.vy * step;
+      p.vy += .035 * step;
+      p.alpha -= p.decay * step;
+
+      if (p.alpha <= 0) {
+        fireworkParticles.splice(i,1);
+        continue;
+      }
+
+      ctx.globalAlpha = Math.max(0,p.alpha);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,2.4,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  let audioCtx = null;
+  let songTimer = null;
+  let activeNodes = [];
+  let noteIndex = 0;
+
+  const melody = [
+    [392,.32],[440,.32],[523.25,.48],[440,.32],[392,.48],[329.63,.32],
+    [392,.32],[523.25,.48],[587.33,.32],[523.25,.32],[440,.48],[392,.6],
+    [440,.32],[523.25,.32],[659.25,.48],[587.33,.32],[523.25,.32],[440,.6]
+  ];
+
+  function initAudio() {
+    try {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return false;
+        audioCtx = new AudioContextClass();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+      return true;
+    } catch (error) {
+      console.warn('Audio initialization failed:', error);
+      return false;
+    }
+  }
+
+  function stopAllAudio() {
+    if (songTimer) {
+      clearTimeout(songTimer);
+      songTimer = null;
+    }
+    activeNodes.forEach((node) => {
+      try { node.stop(); } catch (_) {}
+      try { node.disconnect(); } catch (_) {}
+    });
+    activeNodes = [];
+  }
+
+  function playTone(frequency, duration, volume = .09, type = 'triangle') {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, now);
+    gain.gain.setValueAtTime(.001, now);
+    gain.gain.linearRampToValueAtTime(volume, now + .025);
+    gain.gain.exponentialRampToValueAtTime(.001, now + Math.max(.06,duration*.92));
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + duration);
+
+    activeNodes.push(osc);
+    osc.onended = () => {
+      activeNodes = activeNodes.filter((n) => n !== osc);
+    };
+  }
+
+  function playNextNote() {
+    if (!soundEnabled || !started || !audioCtx) return;
+    const [frequency, duration] = melody[noteIndex];
+    playTone(frequency,duration,.075,'triangle');
+    if (noteIndex % 3 === 0) playTone(frequency/2,duration,.025,'sine');
+    noteIndex = (noteIndex + 1) % melody.length;
+    songTimer = setTimeout(playNextNote,duration*1000);
+  }
+
+  function playGiftFx(tier) {
+    if (!soundEnabled || !audioCtx || audioCtx.state !== 'running') return;
+    if (tier >= 5) playTone(150,.45,.12,'sawtooth');
+    else playTone(587.33 + tier*70,.28,.07,'sine');
+  }
+
+  $('start-btn').addEventListener('click', () => {
+    started = true;
+    $('start-overlay').style.display = 'none';
+    if (soundEnabled && initAudio() && !songTimer) playNextNote();
+    if (!animationId) startAnimation();
+  });
+
+  soundBtn.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    soundBtn.textContent = soundEnabled ? '🔊 เสียง: เปิด' : '🔇 เสียง: ปิด';
+    soundBtn.style.background = soundEnabled ? '#ff9800' : '#757575';
+    if (soundEnabled) {
+      if (initAudio() && started && !songTimer) playNextNote();
+    } else {
+      stopAllAudio();
+    }
+  });
+
+  $('toggle-panel-btn').addEventListener('click', () => testPanel.classList.toggle('show'));
+
+  const giftTierMap = {
+    'Rose':1,
+    'TikTok':1,
+    'Finger Heart':2,
+    'Doughnut':2,
+    'Perfume':3,
+    'Cap':3,
+    'Paper Crane':4,
+    'Fireworks':5,
+    'Dragon':6,
+    'Universe':7
+  };
+
+  const giftQueue = [];
+  const processedEvents = new Map();
+
+  function updateQueueDisplay() {
+    queueText.textContent = `| คิวรอ: ${giftQueue.length}`;
+  }
+
+  function cleanOldEventIds(now = Date.now()) {
+    for (const [id, timestamp] of processedEvents) {
+      if (now - timestamp > CONFIG.dedupeMs) processedEvents.delete(id);
+    }
+  }
+
+  function normalizeGiftName(value) {
+    if (typeof value !== 'string') return '';
+    return value.trim().slice(0,80);
+  }
+
+  function assignTaskToIdleCharacter(task) {
+    const idleChars = characters.filter((ch) => ch.state === 'idle');
+    if (!idleChars.length) return false;
+
+    const ch = pick(idleChars);
+    const bridgeX = nearestAvailableBridge(ch.x);
+    if (bridgeX === null) return false;
+
+    bridgeReservations.add(bridgeX);
+    ch.bridgeX = bridgeX;
+    ch.state = 'alignToBridge';
+    ch.heldTier = task.tier;
+    ch.username = task.username;
+    ch.style = generateRandomStyle();
+    return true;
+  }
+
+  function processQueue() {
+    while (giftQueue.length > 0) {
+      if (!assignTaskToIdleCharacter(giftQueue[0])) break;
+      giftQueue.shift();
+    }
+    updateQueueDisplay();
+  }
+
+  function incrementCounter() {
+    totalCount += 1;
+    totalCountEl.textContent = totalCount.toLocaleString('th-TH');
+    totalCountEl.classList.remove('counter-pop');
+    void totalCountEl.offsetWidth;
+    totalCountEl.classList.add('counter-pop');
+  }
+
+  function enqueueLoyKrathong(username, giftName, forcedTier = null, eventId = null) {
+    const now = Date.now();
+    cleanOldEventIds(now);
+
+    if (eventId !== null && eventId !== undefined && String(eventId).trim() !== '') {
+      const id = String(eventId).slice(0,180);
+      if (processedEvents.has(id)) return false;
+      processedEvents.set(id, now);
+    }
+
+    if (giftQueue.length >= CONFIG.maxQueue) {
+      console.warn('Gift queue is full; event ignored.');
+      return false;
+    }
+
+    const safeUser = typeof username === 'string' && username.trim()
+      ? username.trim().replace(/[<>]/g,'').slice(0,18)
+      : 'ผู้ร่วมงาน';
+
+    const safeGiftName = normalizeGiftName(giftName);
+    const tier = Number.isInteger(forcedTier) && forcedTier >= 1 && forcedTier <= 7
+      ? forcedTier
+      : (giftTierMap[safeGiftName] || 1);
+
+    incrementCounter();
+    playGiftFx(tier);
+    giftQueue.push({ username:safeUser, tier, createdAt:now });
+    processQueue();
+    return true;
+  }
+
+  function handleGiftEvent(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+    const username = typeof data.username === 'string' ? data.username : 'ผู้ร่วมงาน';
+    const giftName = typeof data.giftName === 'string' ? data.giftName : '';
+    const eventId = data.msgId ?? data.eventId ?? null;
+    enqueueLoyKrathong(username, giftName, null, eventId);
+  }
+
+  function setConnectionStatus(state, message) {
+    connDot.className = 'dot ' + state;
+    connText.textContent = message;
+  }
+
+  function connectSocket() {
+    if (typeof window.io !== 'function') {
+      setConnectionStatus('offline','Socket.IO client ไม่พร้อม');
+      return;
+    }
+
+    try {
+      socket = window.io({
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 10000
+      });
+
+      socket.on('connect', () => setConnectionStatus('online','เชื่อมต่อเซิร์ฟเวอร์แล้ว'));
+      socket.on('disconnect', () => setConnectionStatus('offline','หลุดการเชื่อมต่อ (กำลังเชื่อมใหม่...)'));
+      socket.on('connect_error', () => setConnectionStatus('offline','เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ'));
+      socket.on('new_gift', handleGiftEvent);
+    } catch (error) {
+      console.error('Socket.IO error:', error);
+      setConnectionStatus('offline','เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    }
+  }
+  connectSocket();
+
+  document.querySelectorAll('.btn-tier[data-tier]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const tier = Number(button.dataset.tier);
+      const mockUsers = ['ผู้ร่วมงาน','สายมู','น้องแป้ง','NARAPONZ','คุณหญิง'];
+      enqueueLoyKrathong(
+        pick(mockUsers),
+        '',
+        tier,
+        `test-${Date.now()}-${++fallbackEventCounter}`
+      );
+    });
+  });
+
+  const fwColors = ['#ff0055','#00e5ff','#ffd700','#ff9f1c','#b5179e'];
+
+  function releaseBridge(ch) {
+    if (ch.bridgeX !== null) bridgeReservations.delete(ch.bridgeX);
+    ch.bridgeX = null;
+  }
+
+  function updateCharacters(dt) {
+    const movement = CONFIG.walkSpeed * dt;
+
+    characters.forEach((ch) => {
+      if (ch.state === 'idle') return;
+      ch.walkPhase += CONFIG.stepRate * dt;
+
+      if (ch.state === 'alignToBridge') {
+        const dx = ch.bridgeX - ch.x;
+        if (Math.abs(dx) <= movement * 1.2) {
+          ch.x = ch.bridgeX;
+          ch.state = 'walkOnBridge';
+        } else {
+          ch.x += Math.sign(dx) * movement * 1.1;
+        }
+      } else if (ch.state === 'walkOnBridge') {
+        ch.y -= movement;
+
+        if (ch.y <= PIER_WATER_Y) {
+          ch.y = PIER_WATER_Y;
+
+          if (ch.heldTier === 4) {
+            if (floatingLanterns.length < CONFIG.maxFloatingLanterns) {
+              floatingLanterns.push({
+                x:ch.x,
+                y:ch.y-.04,
+                seed:Math.random()*10
+              });
             }
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-
-            toggleBtn.addEventListener('click', () => testPanel.classList.toggle('show'));
-
-            // ==========================================
-            // 1. ฉากหลัง + ระบบ Fallback สมบูรณ์ + โครงสร้างสะพานท่าน้ำ
-            // ==========================================
-            const bgImg = new Image();
-            bgImg.crossOrigin = "anonymous";
-            let bgLoaded = false;
-            bgImg.onload = () => { bgLoaded = true; };
-            bgImg.onerror = () => { bgLoaded = false; };
-            bgImg.src = '/bg_wat_arun.jpg';
-
-            // ตำแหน่งสะพานท่าน้ำ 5 สะพาน (ใช้ร่วมกันทั้งการวาดและการเดิน)
-            const PIER_BRIDGES_X = [0.16, 0.33, 0.50, 0.67, 0.84];
-            const PIER_DECK_Y = 0.73;   // ขอบลานไม้ยืนรอ
-            const PIER_WATER_Y = 0.575; // ปลายสะพานท่าน้ำจุดวางกระทง
-
-            function drawFallbackSkyAndRiver(time) {
-                const horizonY = H * 0.44;
-                const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
-                skyGrad.addColorStop(0, '#020712');
-                skyGrad.addColorStop(0.6, '#091d42');
-                skyGrad.addColorStop(1, '#183b6e');
-                ctx.fillStyle = skyGrad;
-                ctx.fillRect(0, 0, W, horizonY);
-
-                // ดวงจันทร์เต็มดวง
-                ctx.fillStyle = '#fffdf0';
-                ctx.beginPath();
-                ctx.arc(W * 0.5, H * 0.16, Math.min(W, H) * 0.08, 0, Math.PI * 2);
-                ctx.fill();
-
-                // แม่น้ำเจ้าพระยา
-                const riverGrad = ctx.createLinearGradient(0, horizonY, 0, H * PIER_DECK_Y);
-                riverGrad.addColorStop(0, '#051428');
-                riverGrad.addColorStop(1, '#0b264a');
-                ctx.fillStyle = riverGrad;
-                ctx.fillRect(0, horizonY, W, H * PIER_DECK_Y - horizonY);
-            }
-
-            function drawBackgroundAndPier(time) {
-                if (bgLoaded && bgImg.naturalWidth > 0) {
-                    const imgRatio = bgImg.naturalWidth / bgImg.naturalHeight;
-                    const canvasRatio = W / H;
-                    let renderW, renderH, offsetX, offsetY;
-
-                    if (canvasRatio > imgRatio) {
-                        renderW = W;
-                        renderH = W / imgRatio;
-                        offsetX = 0;
-                        offsetY = (H - renderH) / 2;
-                    } else {
-                        renderH = H;
-                        renderW = H * imgRatio;
-                        offsetX = (W - renderW) / 2;
-                        offsetY = 0;
-                    }
-                    ctx.drawImage(bgImg, offsetX, offsetY, renderW, renderH);
-                } else {
-                    drawFallbackSkyAndRiver(time);
-                }
-
-                // วาดลานไม้ยืนรอ (Waiting Platform)
-                const pierStartY = H * PIER_DECK_Y;
-                const woodGrad = ctx.createLinearGradient(0, pierStartY, 0, H);
-                woodGrad.addColorStop(0, '#2c1e14');
-                woodGrad.addColorStop(0.35, '#1c120b');
-                woodGrad.addColorStop(1, '#0d0704');
-                ctx.fillStyle = woodGrad;
-                ctx.fillRect(0, pierStartY, W, H - pierStartY);
-
-                // เส้นร่องแผ่นไม้
-                ctx.strokeStyle = 'rgba(255, 215, 0, 0.12)';
-                ctx.lineWidth = 1.2;
-                for (let y = pierStartY + 18; y < H; y += 22) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(W, y);
-                    ctx.stroke();
-                }
-
-                // ขอบคิ้วทองลานไม้
-                ctx.fillStyle = '#d4a338';
-                ctx.fillRect(0, pierStartY - 3, W, 4);
-
-                // วาดสะพานท่าน้ำ 5 สะพานให้ตรงกับเลนเดิน
-                const topY = H * PIER_WATER_Y;
-                const bridgeHalfW = Math.max(18, W * 0.042);
-
-                PIER_BRIDGES_X.forEach(cx => {
-                    const px = cx * W;
-
-                    // เงาสะพานในน้ำ
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-                    ctx.fillRect(px - bridgeHalfW - 3, topY, (bridgeHalfW + 3) * 2, pierStartY - topY + 6);
-
-                    // ตัวพื้นสะพานไม้
-                    const bridgeGrad = ctx.createLinearGradient(px - bridgeHalfW, 0, px + bridgeHalfW, 0);
-                    bridgeGrad.addColorStop(0, '#3d2819');
-                    bridgeGrad.addColorStop(0.5, '#5c3e27');
-                    bridgeGrad.addColorStop(1, '#2c1c11');
-                    ctx.fillStyle = bridgeGrad;
-                    ctx.fillRect(px - bridgeHalfW, topY, bridgeHalfW * 2, pierStartY - topY);
-
-                    // ราวสะพานสีทองซ้าย-ขวา
-                    ctx.fillStyle = '#ffd700';
-                    ctx.fillRect(px - bridgeHalfW - 2, topY, 3, pierStartY - topY);
-                    ctx.fillRect(px + bridgeHalfW - 1, topY, 3, pierStartY - topY);
-
-                    // ขอบปลายท่าน้ำ
-                    ctx.fillStyle = '#ffb703';
-                    ctx.fillRect(px - bridgeHalfW - 2, topY - 3, (bridgeHalfW + 2) * 2, 4);
-
-                    // เสาโคมไฟประดับปลายท่าน้ำ
-                    const glow = 0.75 + Math.sin(time * 0.006 + cx * 10) * 0.25;
-                    ctx.fillStyle = `rgba(255, 205, 60, ${glow})`;
-                    ctx.beginPath();
-                    ctx.arc(px - bridgeHalfW, topY - 7, 5, 0, Math.PI * 2);
-                    ctx.arc(px + bridgeHalfW, topY - 7, 5, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-            }
-
-            // ==========================================
-            // 2. ตัวละคร 30 คน (100+ สไตล์) รองรับแขกจำนวนมากบนลานท่าน้ำ
-            // ==========================================
-            const tops = ['#ff595e', '#ffca3a', '#ff70a6', '#4cc9f0', '#8ac926', '#f77f00', '#9d4edd', '#00bbf9', '#f15bb5', '#fee440'];
-            const bottoms = ['#6a040f', '#3a0ca3', '#8338ec', '#1d3557', '#2b2d42', '#540b0e', '#38b000', '#0077b6', '#7209b7', '#d90429'];
-            const skinTones = ['#ffdbac', '#f1c27d', '#e0ac69', '#c68642', '#8d5524'];
-            const hairColors = ['#1a1a1a', '#2c1a0e', '#3d2314', '#4a4a4a', '#e6e6e6'];
-
-            function generateRandomStyle() {
-                const isFemale = Math.random() > 0.45;
-                const isElder = Math.random() < 0.15;
-                const isChild = Math.random() < 0.15;
-
-                return {
-                    gender: isFemale ? 'F' : 'M',
-                    isElder,
-                    isChild,
-                    top: tops[Math.floor(Math.random() * tops.length)],
-                    bottom: bottoms[Math.floor(Math.random() * bottoms.length)],
-                    skin: skinTones[Math.floor(Math.random() * skinTones.length)],
-                    hair: isElder ? '#e6e6e6' : hairColors[Math.floor(Math.random() * hairColors.length)]
-                };
-            }
-
-            // สร้าง 30 ที่นั่งยืนรอ (3 แถว x 10 คอลัมน์) บนลานไม้
-            const characters = [];
-            const seatRows = [0.78, 0.85, 0.92];
-            const seatCols = [0.09, 0.18, 0.27, 0.36, 0.45, 0.55, 0.64, 0.73, 0.82, 0.91];
-
-            function getNearestBridgeX(x) {
-                let best = PIER_BRIDGES_X[0];
-                let minDist = Math.abs(x - best);
-                for (let i = 1; i < PIER_BRIDGES_X.length; i++) {
-                    const d = Math.abs(x - PIER_BRIDGES_X[i]);
-                    if (d < minDist) {
-                        minDist = d;
-                        best = PIER_BRIDGES_X[i];
-                    }
-                }
-                return best;
-            }
-
-            seatRows.forEach((ry) => {
-                seatCols.forEach((cx) => {
-                    const jx = (Math.random() - 0.5) * 0.015;
-                    const jy = (Math.random() - 0.5) * 0.012;
-                    const homeX = cx + jx;
-                    const homeY = ry + jy;
-                    characters.push({
-                        homeX,
-                        homeY,
-                        x: homeX,
-                        y: homeY,
-                        bridgeX: getNearestBridgeX(homeX),
-                        state: 'idle', // idle -> alignToBridge -> walkOnBridge -> returnFromBridge -> returnHome
-                        walkPhase: Math.random() * Math.PI * 2,
-                        heldTier: 0,
-                        username: '',
-                        style: generateRandomStyle()
-                    });
-                });
+          } else if (floatingKrathongs.length < CONFIG.maxFloatingKrathongs) {
+            floatingKrathongs.push({
+              x:ch.x+(Math.random()-.5)*.015,
+              y:PIER_WATER_Y-.008,
+              tier:ch.heldTier,
+              driftX:-.00014-Math.random()*.0001,
+              progress:0,
+              seed:Math.random()*10
             });
+          }
 
-            function drawCartoonCharacter(ch, time) {
-                const px = ch.x * W;
-                const py = ch.y * H;
-                let scale = 0.56 + (ch.y - PIER_WATER_Y) * 0.78;
-                if (ch.style.isChild) scale *= 0.78;
-
-                ctx.save();
-                ctx.translate(px, py);
-                ctx.scale(scale, scale);
-
-                const isMoving = ch.state !== 'idle';
-                const bobY = isMoving ? Math.abs(Math.sin(ch.walkPhase)) * -4 : Math.sin(time * 0.003 + ch.walkPhase) * 1.1;
-                const legSwing = isMoving ? Math.sin(ch.walkPhase) * 6 : 0;
-
-                // เงาใต้เท้า
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-                ctx.beginPath();
-                ctx.ellipse(0, 0, 17, 5.5, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.translate(0, bobY);
-
-                // ขา
-                ctx.fillStyle = ch.style.skin;
-                ctx.beginPath();
-                ctx.roundRect(-8.5, -21 + legSwing * 0.5, 5.5, 19, 3);
-                ctx.roundRect(3, -21 - legSwing * 0.5, 5.5, 19, 3);
-                ctx.fill();
-
-                // โจงกระเบน / ผ้าถุง
-                ctx.fillStyle = ch.style.bottom;
-                ctx.beginPath();
-                ctx.moveTo(-12.5, -40);
-                ctx.lineTo(12.5, -40);
-                ctx.lineTo(14.5, -17);
-                ctx.lineTo(-14.5, -17);
-                ctx.closePath();
-                ctx.fill();
-
-                // เข็มขัดทอง
-                ctx.fillStyle = '#ffd700';
-                ctx.fillRect(-12.5, -42, 25, 3);
-
-                // เสื้อ
-                ctx.fillStyle = ch.style.top;
-                ctx.beginPath();
-                ctx.roundRect(-13.5, -64, 27, 23, 7);
-                ctx.fill();
-
-                if (ch.style.gender === 'F') {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
-                    ctx.beginPath();
-                    ctx.moveTo(-10, -64);
-                    ctx.lineTo(-2, -64);
-                    ctx.lineTo(11, -31);
-                    ctx.lineTo(4, -31);
-                    ctx.closePath();
-                    ctx.fill();
-                }
-
-                // แขน
-                ctx.fillStyle = ch.style.skin;
-                ctx.beginPath();
-                ctx.roundRect(-17.5, -61, 5, 18, 2.5);
-                ctx.roundRect(12.5, -61, 5, 18, 2.5);
-                ctx.fill();
-
-                // ศีรษะ
-                ctx.fillStyle = ch.style.skin;
-                ctx.beginPath();
-                ctx.arc(0, -80, 16, 0, Math.PI * 2);
-                ctx.fill();
-
-                // ผม
-                ctx.fillStyle = ch.style.hair;
-                ctx.beginPath();
-                ctx.arc(0, -82, 16.8, Math.PI * 0.85, Math.PI * 2.15);
-                ctx.quadraticCurveTo(16, -68, 0, -70);
-                ctx.quadraticCurveTo(-16, -68, -16.8, -82);
-                ctx.fill();
-
-                if (ch.style.gender === 'F') {
-                    ctx.beginPath();
-                    ctx.arc(0, -98, 7, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.strokeStyle = '#ffd700';
-                    ctx.lineWidth = 1.8;
-                    ctx.beginPath();
-                    ctx.moveTo(-10, -100);
-                    ctx.lineTo(10, -96);
-                    ctx.stroke();
-                }
-
-                // ของที่ถือ
-                if (ch.heldTier > 0) {
-                    if (ch.heldTier === 4) {
-                        drawLanternArt(0, -66, 0.62, time);
-                    } else {
-                        drawKrathongArt(0, -52, ch.heldTier, 0.72, time);
-                    }
-                }
-
-                // ป้ายชื่อคนส่งของขวัญ
-                if (ch.username) {
-                    const tagY = ch.style.gender === 'F' ? -114 : -106;
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-                    ctx.strokeStyle = '#ffd700';
-                    ctx.lineWidth = 1.2;
-                    const textW = Math.max(52, ch.username.length * 7 + 16);
-                    ctx.beginPath();
-                    ctx.roundRect(-textW / 2, tagY - 15, textW, 17, 8.5);
-                    ctx.fill();
-                    ctx.stroke();
-
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 10.5px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(ch.username, 0, tagY - 3);
-                }
-
-                ctx.restore();
+          if (ch.heldTier >= 5) {
+            const bursts = ch.heldTier === 5 ? 2 : (ch.heldTier === 6 ? 4 : 6);
+            for (let b=0; b<bursts; b++) {
+              setTimeout(() => spawnFirework(
+                W*(.2+Math.random()*.6),
+                H*(.12+Math.random()*.22),
+                pick(fwColors)
+              ), b*300);
             }
+          }
 
-            // ==========================================
-            // 4. วาดกระทง โคมลอย และระบบจัดการอนุภาคพลุ (Particle Pool)
-            // ==========================================
-            function drawKrathongArt(x, y, tier, scale, time) {
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.scale(scale, scale);
+          ch.heldTier = 0;
+          ch.state = 'returnFromBridge';
+        }
+      } else if (ch.state === 'returnFromBridge') {
+        ch.y += movement;
+        if (ch.y >= ch.homeY) {
+          ch.y = ch.homeY;
+          ch.state = 'returnHome';
+        }
+      } else if (ch.state === 'returnHome') {
+        const dx = ch.homeX - ch.x;
+        if (Math.abs(dx) <= movement * 1.2) {
+          ch.x = ch.homeX;
+          ch.state = 'idle';
+          ch.username = '';
+          releaseBridge(ch);
+          processQueue();
+        } else {
+          ch.x += Math.sign(dx) * movement * 1.1;
+        }
+      }
+    });
+  }
 
-                const glowR = tier >= 3 ? 32 : 19;
-                const glow = ctx.createRadialGradient(0, -8, 2, 0, -8, glowR);
-                glow.addColorStop(0, tier >= 3 ? 'rgba(255, 225, 80, 0.85)' : 'rgba(255, 190, 60, 0.6)');
-                glow.addColorStop(1, 'rgba(255, 180, 0, 0)');
-                ctx.fillStyle = glow;
-                ctx.beginPath();
-                ctx.arc(0, -8, glowR, 0, Math.PI * 2);
-                ctx.fill();
+  function updateFloatingObjects(dt, time) {
+    const frameScale = Math.min(dt, .05) * 60;
 
-                if (tier === 1) {
-                    ctx.fillStyle = '#40916c';
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, 12, 5, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = '#ff758f';
-                    ctx.beginPath();
-                    ctx.arc(0, -4, 6, 0, Math.PI * 2);
-                    ctx.fill();
-                } else if (tier === 2) {
-                    ctx.fillStyle = '#2d6a4f';
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, 17, 7, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = '#ffb703';
-                    for (let a = -12; a <= 12; a += 6) {
-                        ctx.beginPath();
-                        ctx.arc(a, -4, 4, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                } else {
-                    ctx.fillStyle = '#ffd700';
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, 22, 9, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = '#ff9f1c';
-                    ctx.beginPath();
-                    ctx.moveTo(-16, -2);
-                    ctx.lineTo(0, -14);
-                    ctx.lineTo(16, -2);
-                    ctx.closePath();
-                    ctx.fill();
-                }
+    for (let i=floatingKrathongs.length-1; i>=0; i--) {
+      const k = floatingKrathongs[i];
+      k.y -= .00036 * frameScale * (1-k.progress*.35);
+      k.x += (k.driftX + Math.sin(time*.0018+k.seed)*.00028) * frameScale;
+      k.progress = Math.min(1,Math.max(0,(PIER_WATER_Y-k.y)/(PIER_WATER_Y-.45)));
 
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(-1.5, -16, 3, 10);
-                const flicker = Math.sin(time * 0.02) * 1.2;
-                ctx.fillStyle = '#ffea00';
-                ctx.beginPath();
-                ctx.ellipse(flicker * 0.4, -19, 3, 5, 0, 0, Math.PI * 2);
-                ctx.fill();
+      const scale = Math.max(.16,.65*(1-k.progress*.72));
+      drawKrathongArt(k.x*W,k.y*H,k.tier,scale,time);
 
-                ctx.restore();
-            }
+      if (k.y <= .45 || k.x < -.1 || k.x > 1.1) {
+        floatingKrathongs.splice(i,1);
+      }
+    }
 
-            function drawLanternArt(x, y, scale, time) {
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.scale(scale, scale);
+    for (let i=floatingLanterns.length-1; i>=0; i--) {
+      const l = floatingLanterns[i];
+      l.y -= .00105 * frameScale;
+      l.x += Math.sin(time*.0022+l.seed)*.00045*frameScale;
+      drawLanternArt(l.x*W,l.y*H,Math.max(.16,.72*(l.y/.58)),time);
 
-                const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 30);
-                glow.addColorStop(0, 'rgba(255, 180, 50, 0.85)');
-                glow.addColorStop(1, 'rgba(255, 120, 0, 0)');
-                ctx.fillStyle = glow;
-                ctx.beginPath();
-                ctx.arc(0, 0, 30, 0, Math.PI * 2);
-                ctx.fill();
+      if (l.y < -.05) floatingLanterns.splice(i,1);
+    }
+  }
 
-                const bodyGrad = ctx.createLinearGradient(0, -18, 0, 14);
-                bodyGrad.addColorStop(0, '#ff9f1c');
-                bodyGrad.addColorStop(1, '#fff3b0');
-                ctx.fillStyle = bodyGrad;
-                ctx.beginPath();
-                ctx.moveTo(-13, -16);
-                ctx.lineTo(13, -16);
-                ctx.lineTo(9, 14);
-                ctx.lineTo(-9, 14);
-                ctx.closePath();
-                ctx.fill();
+  function render(time, dt) {
+    ctx.clearRect(0,0,W,H);
+    drawBackgroundAndPier(time);
+    updateFloatingObjects(dt,time);
+    updateCharacters(dt);
+    [...characters].sort((a,b) => a.y-b.y).forEach((ch) => drawCharacter(ch,time));
+    drawAndUpdateParticles(dt);
+  }
 
-                ctx.restore();
-            }
+  function frame(time) {
+    animationId = 0;
+    if (document.hidden || !started) return;
 
-            const floatingKrathongs = [];
-            const floatingLanterns = [];
-            const fireworkParticles = [];
-            const MAX_PARTICLES = 450; // จำกัดจำนวนอนุภาคป้องกันอาการกระตุกบนมือถือ
+    const dt = lastFrameTime ? Math.min((time-lastFrameTime)/1000,.05) : 1/60;
+    lastFrameTime = time;
+    render(time,dt);
+    animationId = requestAnimationFrame(frame);
+  }
 
-            function spawnFirework(x, y, color) {
-                if (fireworkParticles.length > MAX_PARTICLES) return;
-                const count = 36;
-                for (let i = 0; i < count; i++) {
-                    const angle = (Math.PI * 2 * i) / count;
-                    const speed = Math.random() * 2.5 + 1.1;
-                    fireworkParticles.push({
-                        x, y,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        alpha: 1,
-                        decay: Math.random() * 0.012 + 0.012,
-                        color
-                    });
-                }
-            }
+  function startAnimation() {
+    if (!animationId && started && !document.hidden) {
+      lastFrameTime = 0;
+      animationId = requestAnimationFrame(frame);
+    }
+  }
 
-            // ==========================================
-            // 8. ระบบเสียงรำวงวันลอยกระทงที่เปิด-ปิดได้สมบูรณ์
-            // ==========================================
-            let audioCtx = null;
-            let songTimer = null;
-            let activeNodes = [];
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (animationId) cancelAnimationFrame(animationId);
+      animationId = 0;
+      lastFrameTime = 0;
+    } else {
+      startAnimation();
+    }
+  });
 
-            function initAudio() {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-            }
-
-            function stopAllAudio() {
-                if (songTimer) {
-                    clearTimeout(songTimer);
-                    songTimer = null;
-                }
-                activeNodes.forEach(node => {
-                    try { node.stop(); node.disconnect(); } catch (e) {}
-                });
-                activeNodes = [];
-            }
-
-            const loyKrathongSong = [
-                { f: 392.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 523.25, d: 0.70 },
-                { f: 440.00, d: 0.35 }, { f: 523.25, d: 0.35 }, { f: 587.33, d: 0.35 }, { f: 523.25, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 392.00, d: 0.70 },
-                { f: 392.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 523.25, d: 0.70 },
-                { f: 440.00, d: 0.25 }, { f: 523.25, d: 0.25 }, { f: 587.33, d: 0.35 }, { f: 659.25, d: 0.50 },
-                { f: 587.33, d: 0.35 }, { f: 523.25, d: 0.35 }, { f: 440.00, d: 0.25 }, { f: 392.00, d: 0.25 }, { f: 523.25, d: 0.85 },
-                { f: 659.25, d: 0.55 }, { f: 659.25, d: 0.55 }, { f: 587.33, d: 0.25 }, { f: 523.25, d: 0.25 }, { f: 587.33, d: 0.70 },
-                { f: 523.25, d: 0.55 }, { f: 523.25, d: 0.55 }, { f: 440.00, d: 0.25 }, { f: 392.00, d: 0.25 }, { f: 440.00, d: 0.70 },
-                { f: 392.00, d: 0.35 }, { f: 440.00, d: 0.25 }, { f: 523.25, d: 0.25 }, { f: 587.33, d: 0.35 }, { f: 659.25, d: 0.35 }, { f: 587.33, d: 0.50 },
-                { f: 523.25, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 329.63, d: 0.35 },
-                { f: 392.00, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 523.25, d: 0.35 }, { f: 523.25, d: 0.90 }
-            ];
-
-            let noteIdx = 0;
-            function playNextSongNote() {
-                if (!soundEnabled) return;
-                initAudio();
-                const note = loyKrathongSong[noteIdx];
-                const now = audioCtx.currentTime;
-
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(note.f, now);
-
-                gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(0.13, now + 0.03);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + note.d * 0.95);
-
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now);
-                osc.stop(now + note.d);
-
-                activeNodes.push(osc);
-                osc.onended = () => {
-                    activeNodes = activeNodes.filter(n => n !== osc);
-                };
-
-                if (noteIdx % 2 === 0) {
-                    const chingOsc = audioCtx.createOscillator();
-                    const chingGain = audioCtx.createGain();
-                    chingOsc.type = 'sine';
-                    chingOsc.frequency.setValueAtTime(noteIdx % 4 === 0 ? 2400 : 1800, now);
-                    chingGain.gain.setValueAtTime(0.025, now);
-                    chingGain.gain.exponentialRampToValueAtTime(0.0001, now + (noteIdx % 4 === 0 ? 0.25 : 0.08));
-                    chingOsc.connect(chingGain);
-                    chingGain.connect(audioCtx.destination);
-                    chingOsc.start(now);
-                    chingOsc.stop(now + 0.25);
-                    activeNodes.push(chingOsc);
-                    chingOsc.onended = () => {
-                        activeNodes = activeNodes.filter(n => n !== chingOsc);
-                    };
-                }
-
-                noteIdx = (noteIdx + 1) % loyKrathongSong.length;
-                songTimer = setTimeout(playNextSongNote, note.d * 1000);
-            }
-
-            function playGiftFx(tier) {
-                if (!soundEnabled) return;
-                initAudio();
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                if (tier >= 5) {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(160, now);
-                    osc.frequency.exponentialRampToValueAtTime(35, now + 0.55);
-                    gain.gain.setValueAtTime(0.28, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-                } else {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(587.33, now);
-                    osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.35);
-                    gain.gain.setValueAtTime(0.2, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
-                }
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now);
-                osc.stop(now + 0.6);
-            }
-
-            startBtn.addEventListener('click', () => {
-                startOverlay.style.display = 'none';
-                initAudio();
-                if (soundEnabled && !songTimer) playNextSongNote();
-            });
-
-            const soundBtn = document.getElementById('sound-toggle');
-            soundBtn.addEventListener('click', () => {
-                soundEnabled = !soundEnabled;
-                soundBtn.innerHTML = soundEnabled ? '🔊 เสียงเพลง: เปิด' : '🔇 เสียงเพลง: ปิด';
-                soundBtn.style.background = soundEnabled ? '#ff9800' : '#757575';
-                if (soundEnabled) {
-                    initAudio();
-                    if (!songTimer) playNextSongNote();
-                } else {
-                    stopAllAudio();
-                }
-            });
-
-            // ==========================================
-            // 5 & 6. ระบบคิวกิจกรรม (Queue) + กันข้อมูลซ้ำ (Deduplication)
-            // ==========================================
-            const giftTierMap = {
-                'Rose': 1, 'TikTok': 1,
-                'Finger Heart': 2, 'Doughnut': 2,
-                'Perfume': 3, 'Cap': 3,
-                'Paper Crane': 4,
-                'Fireworks': 5,
-                'Dragon': 6,
-                'Universe': 7
-            };
-
-            const giftQueue = [];
-            const processedEvents = new Set();
-
-            function updateQueueDisplay() {
-                queueText.innerText = `| คิวรอ: ${giftQueue.length}`;
-            }
-
-            function assignTaskToIdleCharacter(task) {
-                const idleChars = characters.filter(c => c.state === 'idle');
-                if (idleChars.length === 0) return false;
-
-                // เลือกตัวละครที่ว่างและใกล้สะพานที่ว่างที่สุด
-                const ch = idleChars[Math.floor(Math.random() * idleChars.length)];
-                ch.state = 'alignToBridge';
-                ch.heldTier = task.tier;
-                ch.username = task.username;
-                ch.style = generateRandomStyle();
-                return true;
-            }
-
-            function processQueue() {
-                while (giftQueue.length > 0) {
-                    const nextTask = giftQueue[0];
-                    if (assignTaskToIdleCharacter(nextTask)) {
-                        giftQueue.shift();
-                        updateQueueDisplay();
-                    } else {
-                        break; // รอตัวละครเดินกลับมาก่อน
-                    }
-                }
-            }
-
-            function enqueueLoyKrathong(username, giftName, forcedTier = null, eventId = null) {
-                // ป้องกัน Event ซ้ำซ้อนภายใน 5 วินาที
-                if (eventId) {
-                    if (processedEvents.has(eventId)) return;
-                    processedEvents.add(eventId);
-                    setTimeout(() => processedEvents.delete(eventId), 5000);
-                }
-
-                const safeUser = (typeof username === 'string' && username.trim()) ? username.trim().slice(0, 18) : 'ผู้ร่วมงาน';
-                const tier = forcedTier || giftTierMap[giftName] || 1;
-
-                totalCount++;
-                totalCountEl.innerText = totalCount.toLocaleString();
-                totalCountEl.classList.add('counter-pop');
-                setTimeout(() => totalCountEl.classList.remove('counter-pop'), 200);
-
-                playGiftFx(tier);
-
-                giftQueue.push({ username: safeUser, tier });
-                updateQueueDisplay();
-                processQueue();
-            }
-
-            // ==========================================
-            // 10. Socket.IO Connection & Validation
-            // ==========================================
-            if (typeof io !== 'undefined') {
-                const socket = io({ reconnection: true, reconnectionDelay: 1500 });
-
-                socket.on('connect', () => {
-                    connDot.className = 'dot online';
-                    connText.innerText = 'เชื่อมต่อ TikTok Live';
-                });
-
-                socket.on('disconnect', () => {
-                    connDot.className = 'dot offline';
-                    connText.innerText = 'ขาดการเชื่อมต่อ (กำลังต่อใหม่...)';
-                });
-
-                socket.on('connect_error', () => {
-                    connDot.className = 'dot offline';
-                    connText.innerText = 'เชื่อมต่อเซิร์ฟเวอร์ขัดข้อง';
-                });
-
-                socket.on('new_gift', (data) => {
-                    if (!data || typeof data !== 'object') return;
-                    const eventId = data.msgId || `${data.username}_${data.giftName}_${Math.floor(Date.now() / 1000)}`;
-                    enqueueLoyKrathong(data.username, data.giftName, null, eventId);
-                });
-            } else {
-                connDot.className = 'dot offline';
-                connText.innerText = 'โหมดออฟไลน์ / ทดสอบ';
-            }
-
-            document.querySelectorAll('.btn-tier[data-tier]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const tier = parseInt(btn.getAttribute('data-tier'), 10);
-                    const mockUsers = ['พี่โอ๊ต', 'สายมู', 'น้องแป้ง', 'NARAPONZ', 'คุณหญิง'];
-                    const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-                    enqueueLoyKrathong(randomUser, '', tier);
-                });
-            });
-
-            // ==========================================
-            // 3, 4, 7. Main Animation Loop (เดินตามสะพาน & ลอยเป็นธรรมชาติ)
-            // ==========================================
-            const WALK_SPEED = 0.00175;
-            const STEP_PHASE = 0.175;
-
-            function loop(time) {
-                requestAnimationFrame(loop);
-                ctx.clearRect(0, 0, W, H);
-
-                // 1. วาดฉากหลังและสะพานท่าน้ำ
-                drawBackgroundAndPier(time);
-
-                // 2. อัปเดตกระทงลอยในแม่น้ำ (ลอยพริ้วตามกระแสน้ำธรรมชาติ)
-                for (let i = floatingKrathongs.length - 1; i >= 0; i--) {
-                    const k = floatingKrathongs[i];
-                    k.age += 0.016;
-                    // ค่อยๆ ลอยออกไปกลางน้ำและไหลไปทางซ้ายตามกระแสน้ำเจ้าพระยา
-                    k.y -= 0.00036 * (1 - k.progress * 0.35);
-                    k.x += (k.driftX + Math.sin(time * 0.0018 + k.seed) * 0.00028);
-
-                    k.progress = Math.min(1, Math.max(0, (PIER_WATER_Y - k.y) / (PIER_WATER_Y - 0.45)));
-                    const scale = Math.max(0.16, 0.65 * (1 - k.progress * 0.72));
-
-                    drawKrathongArt(k.x * W, k.y * H, k.tier, scale, time);
-
-                    if (k.y <= 0.45) {
-                        floatingKrathongs.splice(i, 1);
-                    }
-                }
-
-                // 3. อัปเดตโคมลอยขึ้นฟ้า
-                for (let i = floatingLanterns.length - 1; i >= 0; i--) {
-                    const l = floatingLanterns[i];
-                    l.y -= 0.00105;
-                    l.x += Math.sin(time * 0.0022 + l.seed) * 0.00045;
-                    const scale = Math.max(0.16, 0.72 * (l.y / 0.58));
-                    drawLanternArt(l.x * W, l.y * H, scale, time);
-
-                    if (l.y < -0.05) {
-                        floatingLanterns.splice(i, 1);
-                    }
-                }
-
-                // 4. อัปเดตการเดินของตัวละครให้ตรงแนวสะพานท่าน้ำ 100%
-                const sortedChars = [...characters].sort((a, b) => a.y - b.y);
-                sortedChars.forEach(ch => {
-                    if (ch.state === 'alignToBridge') {
-                        // ขั้นที่ 1: เดินบนลานไม้ไปให้ตรงแนวสะพานท่าน้ำก่อน
-                        ch.walkPhase += STEP_PHASE;
-                        const dx = ch.bridgeX - ch.x;
-                        if (Math.abs(dx) <= WALK_SPEED * 1.2) {
-                            ch.x = ch.bridgeX;
-                            ch.state = 'walkOnBridge';
-                        } else {
-                            ch.x += Math.sign(dx) * WALK_SPEED * 1.1;
-                        }
-                    } else if (ch.state === 'walkOnBridge') {
-                        // ขั้นที่ 2: เดินตรงขึ้นไปบนสะพานไม้จนถึงขอบปลายสะพาน
-                        ch.walkPhase += STEP_PHASE;
-                        ch.y -= WALK_SPEED;
-                        if (ch.y <= PIER_WATER_Y) {
-                            ch.y = PIER_WATER_Y;
-
-                            if (ch.heldTier === 4) {
-                                floatingLanterns.push({
-                                    x: ch.x,
-                                    y: ch.y - 0.04,
-                                    seed: Math.random() * 10
-                                });
-                            } else {
-                                floatingKrathongs.push({
-                                    x: ch.x + (Math.random() - 0.5) * 0.015,
-                                    y: PIER_WATER_Y - 0.008,
-                                    tier: ch.heldTier,
-                                    driftX: -0.00014 - Math.random() * 0.0001,
-                                    progress: 0,
-                                    seed: Math.random() * 10
-                                });
-                            }
-
-                            if (ch.heldTier >= 5) {
-                                const fwColors = ['#ff0055', '#00e5ff', '#ffd700', '#ff9f1c', '#b5179e'];
-                                const count = ch.heldTier === 5 ? 2 : (ch.heldTier === 6 ? 4 : 6);
-                                for (let b = 0; b < count; b++) {
-                                    setTimeout(() => {
-                                        spawnFirework(
-                                            W * (0.2 + Math.random() * 0.6),
-                                            H * (0.12 + Math.random() * 0.22),
-                                            fwColors[Math.floor(Math.random() * fwColors.length)]
-                                        );
-                                    }, b * 350);
-                                }
-                            }
-
-                            ch.heldTier = 0;
-                            ch.state = 'returnFromBridge';
-                        }
-                    } else if (ch.state === 'returnFromBridge') {
-                        // ขั้นที่ 3: เดินลงจากสะพานท่าน้ำกลับมาที่ระดับแถวยืนบนลานไม้
-                        ch.walkPhase += STEP_PHASE;
-                        ch.y += WALK_SPEED;
-                        if (ch.y >= ch.homeY) {
-                            ch.y = ch.homeY;
-                            ch.state = 'returnHome';
-                        }
-                    } else if (ch.state === 'returnHome') {
-                        // ขั้นที่ 4: เดินกลับเข้าประจำจุดยืนรอเดิม
-                        ch.walkPhase += STEP_PHASE;
-                        const dx = ch.homeX - ch.x;
-                        if (Math.abs(dx) <= WALK_SPEED * 1.2) {
-                            ch.x = ch.homeX;
-                            ch.state = 'idle';
-                            ch.username = '';
-                            processQueue(); // ว่างแล้ว ดึงคิวถัดไปทันที
-                        } else {
-                            ch.x += Math.sign(dx) * WALK_SPEED * 1.1;
-                        }
-                    }
-
-                    drawCartoonCharacter(ch, time);
-                });
-
-                // 5. อัปเดตอนุภาคพลุ
-                for (let i = fireworkParticles.length - 1; i >= 0; i--) {
-                    const p = fireworkParticles[i];
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vy += 0.035;
-                    p.alpha -= p.decay;
-                    if (p.alpha > 0) {
-                        ctx.fillStyle = p.color;
-                        ctx.globalAlpha = p.alpha;
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, 2.4, 0, Math.PI * 2);
-                        ctx.fill();
-                    } else {
-                        fireworkParticles.splice(i, 1);
-                    }
-                }
-                ctx.globalAlpha = 1;
-            }
-
-            requestAnimationFrame(loop);
-        });
-    </script>
+  render(0,1/60);
+})();
+</script>
 </body>
 </html>
