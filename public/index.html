@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Loy Krathong Live 9:16</title>
+    <title>Loy Krathong 3D Live Stream</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -20,7 +21,16 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* 🔘 หน้าจอต้อนรับกดเปิดเสียง */
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* 🔘 หน้าจอต้อนรับเพื่อปลดล็อกเสียงบนมือถือ */
         #start-overlay {
             position: absolute;
             top: 0;
@@ -51,53 +61,12 @@
             cursor: pointer;
         }
 
-        /* 🌕 ฉากหลังบรรยากาศคืนวันเพ็ญลอยกระทง (SVG Embedded 100%) */
-        #game-screen {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(to bottom, #030a16 0%, #0a1d3a 40%, #06172b 75%, #020b18 100%);
-            overflow: hidden;
-        }
-
-        /* ดวงจันทร์เต็มดวงเรืองแสง */
-        .moon {
-            position: absolute;
-            top: 12%;
-            right: 12%;
-            width: 85px;
-            height: 85px;
-            background: radial-gradient(circle, #fffdf0 50%, #ffe066 100%);
-            border-radius: 50%;
-            box-shadow: 0 0 30px #ffe066, 0 0 70px rgba(255, 224, 102, 0.4);
-        }
-
-        /* เงาสถาปัตยกรรมวัดอรุณฯ ยามค่ำคืน */
-        .wat-arun-svg {
-            position: absolute;
-            bottom: 38%;
-            width: 100%;
-            height: 160px;
-            pointer-events: none;
-        }
-
-        /* แม่น้ำเจ้าพระยาสะท้อนแสง */
-        .river-container {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 40%;
-            background: linear-gradient(to top, #010814 0%, #061a33 70%, rgba(10, 29, 58, 0.5) 100%);
-            border-top: 1px solid rgba(255, 215, 0, 0.3);
-            box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
-        }
-
         /* 🏆 ป้ายนับยอดกระทงมุมขวาบน */
         #counter-box {
             position: absolute;
             top: 15px;
             right: 15px;
-            background: rgba(2, 7, 18, 0.85);
+            background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(6px);
             border: 1.5px solid #ffd700;
             border-radius: 20px;
@@ -118,10 +87,6 @@
             font-weight: 800;
             color: #ffd700;
             text-shadow: 0 0 8px #ff9800;
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .counter-pop {
-            transform: scale(1.35);
         }
 
         /* 🎛️ ปุ่มเครื่องมือทดสอบ */
@@ -129,7 +94,7 @@
             position: absolute;
             top: 15px;
             left: 15px;
-            background: rgba(2, 7, 18, 0.85);
+            background: rgba(0, 0, 0, 0.75);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
             padding: 7px 14px;
@@ -137,7 +102,6 @@
             font-size: 11px;
             cursor: pointer;
             z-index: 101;
-            backdrop-filter: blur(6px);
         }
 
         #test-panel {
@@ -148,11 +112,11 @@
             flex-direction: column;
             gap: 6px;
             z-index: 100;
-            background: rgba(2, 7, 18, 0.95);
+            background: rgba(0, 0, 0, 0.9);
             padding: 12px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            width: 150px;
+            width: 160px;
         }
         #test-panel.show {
             display: flex;
@@ -167,221 +131,255 @@
             font-weight: bold;
             text-align: left;
         }
-        #sound-toggle {
-            background: #ff9800;
-            color: #000;
-            text-align: center;
-        }
-
-        /* องค์ประกอบกระทงและของขวัญ */
-        .gift-element {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 10;
-            will-change: transform, opacity;
-            pointer-events: none;
-        }
-        .avatar {
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .username {
-            background: rgba(0, 0, 0, 0.85);
-            color: #fff;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            margin-bottom: 2px;
-            border: 1px solid #ffd700;
-            white-space: nowrap;
-            max-width: 90px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .icon-display {
-            margin-top: -10px;
-            line-height: 1;
-        }
-
-        /* Tier Animations */
-        .anim-t1 { animation: floatRiver 11s ease-out forwards, sway 3s ease-in-out infinite alternate; }
-        .anim-t1 .avatar { width: 42px; height: 42px; border: 2px solid #fff; }
-        .anim-t1 .icon-display { font-size: 32px; }
-
-        .anim-t2 { animation: floatRiver 13s ease-out forwards, sway 3s ease-in-out infinite alternate; }
-        .anim-t2 .avatar { width: 52px; height: 52px; border: 2px solid #ffd700; box-shadow: 0 0 8px #ffd700; }
-        .anim-t2 .icon-display { font-size: 40px; filter: drop-shadow(0 0 6px #ff9900); }
-
-        .anim-t3 { animation: floatRiver 15s ease-out forwards, sway 2.5s ease-in-out infinite alternate; }
-        .anim-t3 .avatar { width: 62px; height: 62px; border: 3px solid #fff; box-shadow: 0 0 15px #ffea00; }
-        .anim-t3 .icon-display { font-size: 50px; filter: drop-shadow(0 0 12px #ffea00); }
-
-        .anim-t4 { animation: floatSky 13s ease-out forwards, sway 2s ease-in-out infinite alternate; }
-        .anim-t4 .avatar { width: 55px; height: 55px; border: 2.5px solid #ff9800; box-shadow: 0 0 12px #ff9800; }
-        .anim-t4 .icon-display { font-size: 42px; filter: drop-shadow(0 0 10px #ff9800); }
-
-        .anim-t5 { animation: firework 5s ease-out forwards; }
-        .anim-t5 .avatar { width: 70px; height: 70px; border: 3px solid #00e5ff; box-shadow: 0 0 20px #00e5ff; }
-        .anim-t5 .icon-display { font-size: 55px; filter: drop-shadow(0 0 15px #ff0055); }
-
-        .anim-t6 { animation: firework 6.5s ease-out forwards; }
-        .anim-t6 .avatar { width: 85px; height: 85px; border: 4px solid #ff0055; box-shadow: 0 0 25px #ff0055; }
-        .anim-t6 .icon-display { font-size: 70px; filter: drop-shadow(0 0 25px #ffea00); }
-
-        .anim-t7 { animation: ultimateUniverse 9s ease-out forwards; }
-        .anim-t7 .avatar { width: 100px; height: 100px; border: 4px solid #fff; box-shadow: 0 0 35px #fff, 0 0 60px #ff00e5; }
-        .anim-t7 .icon-display { font-size: 85px; filter: drop-shadow(0 0 30px #ff00e5); }
-
-        @keyframes floatRiver {
-            0% { bottom: 2%; transform: scale(1); opacity: 1; }
-            100% { bottom: 36%; transform: scale(0.3); opacity: 0; }
-        }
-        @keyframes floatSky {
-            0% { bottom: 25%; transform: scale(1); opacity: 1; }
-            100% { bottom: 90%; transform: scale(0.35); opacity: 0; }
-        }
-        @keyframes firework {
-            0% { transform: scale(0.2); opacity: 0; }
-            40% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-        @keyframes ultimateUniverse {
-            0% { transform: scale(0.2) rotate(-20deg); opacity: 0; }
-            30% { transform: scale(1.3) rotate(0deg); opacity: 1; }
-            70% { transform: scale(1.4) rotate(10deg); opacity: 1; }
-            100% { transform: scale(1.8) rotate(20deg); opacity: 0; }
-        }
-        @keyframes sway {
-            0% { margin-left: -8px; }
-            100% { margin-left: 8px; }
-        }
     </style>
 </head>
 <body>
 
-    <!-- 🔘 หน้าจอกดเปิดเสียงออนไลน์ -->
     <div id="start-overlay">
-        <h2>🪷 ไลฟ์สดคืนวันเพ็ญลอยกระทง 🪷</h2>
-        <p style="font-size: 13px; margin-top: 8px; color: #ffe066;">แตะปุ่มเพื่อเปิดใช้งานระบบเสียงดนตรีสด</p>
-        <button id="start-btn">🎵 เริ่มต้นใช้งาน (เปิดเสียง)</button>
+        <h2>🪷 ระบบลอยกระทง 3D Interactive 🪷</h2>
+        <p style="font-size: 13px; margin-top: 8px; color: #ffe066;">แตะปุ่มด้านล่างเพื่อเปิดระบบเสียงและเข้าสู่ฉากลอยกระทง 3D</p>
+        <button id="start-btn">🎵 เริ่มต้นใช้งาน</button>
     </div>
 
-    <div id="game-screen">
-        <div class="moon"></div>
+    <div id="canvas-container"></div>
 
-        <!-- กราฟิกเวกเตอร์วัดอรุณฯ ยามค่ำคืนฝังตรง -->
-        <svg class="wat-arun-svg" viewBox="0 0 1000 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#020914" opacity="0.9" d="M0,200 L0,170 L100,170 L150,170 L170,120 L180,80 L190,120 L210,170 L350,170 L460,170 L480,90 L495,30 L500,10 L505,30 L520,90 L540,170 L650,170 L790,170 L810,120 L820,80 L830,120 L850,170 L1000,170 L1000,200 Z"/>
-            <path fill="#ffb703" opacity="0.3" d="M495,30 L500,10 L505,30 L515,80 L485,80 Z"/>
-        </svg>
+    <button id="toggle-panel-btn">⚙️ เครื่องมือ</button>
 
-        <div class="river-container"></div>
+    <div id="test-panel">
+        <button id="sound-toggle" class="btn-tier" style="background:#ff9800; color:#000; text-align:center;">🔊 เสียง: เปิด</button>
+        <button class="btn-tier" data-tier="1" style="background: #8ecae6; color:#000;">T1: ลอยกระทงเล็ก</button>
+        <button class="btn-tier" data-tier="2" style="background: #2a9d8f;">T2: ลอยกระทงตอง</button>
+        <button class="btn-tier" data-tier="3" style="background: #e9c46a; color:#000;">T3: ลอยกระทงทอง</button>
+        <button class="btn-tier" data-tier="4" style="background: #f4a261;">T4: ปล่อยโคมลอย</button>
+        <button class="btn-tier" data-tier="5" style="background: #e76f51;">T5: จุดพลุฉลอง</button>
+    </div>
 
-        <button id="toggle-panel-btn">⚙️ เครื่องมือ</button>
-
-        <div id="test-panel">
-            <button id="sound-toggle" class="btn-tier">🔊 เสียง: เปิด</button>
-            <button class="btn-tier" data-tier="1" style="background: #8ecae6; color:#000;">T1: ดอกไม้จิ๋ว</button>
-            <button class="btn-tier" data-tier="2" style="background: #2a9d8f;">T2: กระทงตอง</button>
-            <button class="btn-tier" data-tier="3" style="background: #e9c46a; color:#000;">T3: กระทงทอง</button>
-            <button class="btn-tier" data-tier="4" style="background: #f4a261;">T4: โคมลอย</button>
-            <button class="btn-tier" data-tier="5" style="background: #e76f51;">T5: พลุฉลอง</button>
-            <button class="btn-tier" data-tier="6" style="background: #d62828;">T6: มังกรฟ้า</button>
-            <button class="btn-tier" data-tier="7" style="background: #9d4edd;">T7: จักรวาล</button>
+    <div id="counter-box">
+        <span style="font-size:16px;">🪷</span>
+        <div>
+            <div class="title">ร่วมลอยกระทง</div>
+            <div id="total-count" class="number">0</div>
         </div>
-
-        <div id="counter-box">
-            <span style="font-size:16px;">🪷</span>
-            <div>
-                <div class="title">ร่วมลอยกระทง</div>
-                <div id="total-count" class="number">0</div>
-            </div>
-            <span class="title">ใบ</span>
-        </div>
+        <span class="title">ใบ</span>
     </div>
 
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const socket = typeof io !== 'undefined' ? io() : null;
-            const gameScreen = document.getElementById('game-screen');
+            const container = document.getElementById('canvas-container');
             const totalCountEl = document.getElementById('total-count');
-            const testPanel = document.getElementById('test-panel');
-            const toggleBtn = document.getElementById('toggle-panel-btn');
             const startOverlay = document.getElementById('start-overlay');
             const startBtn = document.getElementById('start-btn');
-            
+            const toggleBtn = document.getElementById('toggle-panel-btn');
+            const testPanel = document.getElementById('test-panel');
+
             let totalCount = 0;
             let soundEnabled = true;
-
-            // 🎵 ระบบสังเคราะห์ดนตรีบรรยากาศลอยกระทง
-            let audioCtx;
-            let musicInterval;
-
-            function initAudio() {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-            }
-
-            function startLoyKrathongMusic() {
-                if (musicInterval || !soundEnabled) return;
-
-                const melodyNotes = [392.00, 440.00, 523.25, 587.33, 659.25, 783.99];
-                let index = 0;
-
-                musicInterval = setInterval(() => {
-                    if (!soundEnabled || !audioCtx) return;
-
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(melodyNotes[index % melodyNotes.length], audioCtx.currentTime);
-
-                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
-
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 1.2);
-
-                    index = (index + 1) % melodyNotes.length;
-                }, 600);
-            }
-
-            startBtn.addEventListener('click', () => {
-                startOverlay.style.display = 'none';
-                initAudio();
-                startLoyKrathongMusic();
-            });
 
             toggleBtn.addEventListener('click', () => {
                 testPanel.classList.toggle('show');
             });
 
-            function playSound(tier) {
-                if (!soundEnabled) return;
+            // --- 🎥 ตั้งค่า Three.js 3D Scene ---
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020712);
+            scene.fog = new THREE.FogExp2(0x020712, 0.025);
+
+            const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 4.5, 11);
+            camera.lookAt(0, 1.5, -2);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // 💡 แสงสว่างคืนวันเพ็ญ
+            const ambientLight = new THREE.AmbientLight(0x405070, 0.8);
+            scene.add(ambientLight);
+
+            const moonLight = new THREE.DirectionalLight(0xffea79, 1.2);
+            moonLight.position.set(8, 15, -10);
+            scene.add(moonLight);
+
+            // 🌕 ดวงจันทร์ 3D
+            const moonGeo = new THREE.SphereGeometry(2, 32, 32);
+            const moonMat = new THREE.MeshBasicMaterial({ color: 0xfffae6 });
+            const moon = new THREE.Mesh(moonGeo, moonMat);
+            moon.position.set(8, 14, -20);
+            scene.add(moon);
+
+            // 🌊 แม่น้ำเจ้าพระยา (ด้านหน้า Z: -3 ถึง -15)
+            const riverGeo = new THREE.PlaneGeometry(30, 20);
+            const riverMat = new THREE.MeshStandardMaterial({ color: 0x051a30, roughness: 0.1, metalness: 0.8 });
+            const river = new THREE.Mesh(riverGeo, riverMat);
+            river.rotation.x = -Math.PI / 2;
+            river.position.set(0, 0, -8);
+            scene.add(river);
+
+            // 🧱 ตลิ่ง/ลานทางเดิน (ด้านหลัง Z: -3 ถึง 10)
+            const groundGeo = new THREE.PlaneGeometry(30, 15);
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x1a2636, roughness: 0.9 });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.set(0, 0.05, 4.5);
+            scene.add(ground);
+
+            // 🕯️ ฟังก์ชันสร้างโมเดลกระทง 3D
+            function createKrathongMesh() {
+                const group = new THREE.Group();
+                // ฐานใบตอง
+                const baseGeo = new THREE.CylinderGeometry(0.4, 0.45, 0.15, 12);
+                const baseMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f });
+                const base = new THREE.Mesh(baseGeo, baseMat);
+                group.add(base);
+
+                // ดอกไม้/เทียน
+                const candleGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.3, 8);
+                const candleMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+                const candle = new THREE.Mesh(candleGeo, candleMat);
+                candle.position.y = 0.2;
+                group.add(candle);
+
+                // แสงเทียนเรืองแสง
+                const light = new THREE.PointLight(0xffaa00, 1.5, 3);
+                light.position.y = 0.4;
+                group.add(light);
+
+                return group;
+            }
+
+            // 👤 ฟังก์ชันสร้างตัวละคร 3D
+            const avatars = [];
+            function createAvatar(x, z) {
+                const group = new THREE.Group();
+                
+                // หัว
+                const headGeo = new THREE.SphereGeometry(0.28, 16, 16);
+                const headMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+                const head = new THREE.Mesh(headGeo, headMat);
+                head.position.y = 1.35;
+                group.add(head);
+
+                // ตัว (ชุดไทย/เสื้อสีสดใส)
+                const bodyGeo = new THREE.CylinderGeometry(0.22, 0.32, 0.95, 16);
+                const bodyMat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
+                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                body.position.y = 0.65;
+                group.add(body);
+
+                group.position.set(x, 0.05, z);
+                scene.add(group);
+                return group;
+            }
+
+            // สร้างตัวละครยืนเป็นแถวเรียงกันริมตลิ่ง
+            for(let x = -4; x <= 4; x += 1.3) {
+                for(let z = 3; z <= 7; z += 1.6) {
+                    avatars.push(createAvatar(x, z));
+                }
+            }
+
+            // 🚶‍♂️ แอนิเมชัน: ถือกระทงเดินไปริมน้ำ -> วางกระทงลงแม่น้ำ -> กระทงค่อยๆ ลอยออกไป
+            function animateWalkToRiver(avatar) {
+                const startX = avatar.position.x;
+                const startZ = avatar.position.z;
+                const targetZ = -2.8; // จุดริมแม่น้ำ
+
+                // สร้างกระทงให้ตัวละครถือ
+                const krathong = createKrathongMesh();
+                krathong.position.set(0, 0.8, -0.4);
+                avatar.add(krathong);
+
+                let progress = 0;
+                const walkInterval = setInterval(() => {
+                    progress += 0.025;
+                    avatar.position.z = THREE.MathUtils.lerp(startZ, targetZ, progress);
+                    avatar.position.y = 0.05 + Math.abs(Math.sin(progress * Math.PI * 10)) * 0.12;
+
+                    if (progress >= 1) {
+                        clearInterval(walkInterval);
+
+                        // 🪷 วางกระทงลงน้ำ
+                        avatar.remove(krathong);
+                        krathong.position.set(avatar.position.x, 0.1, targetZ);
+                        scene.add(krathong);
+
+                        // กระทงค่อยๆ ลอยออกไปตามแม่น้ำ
+                        let floatProgress = 0;
+                        const floatInterval = setInterval(() => {
+                            floatProgress += 0.005;
+                            krathong.position.z -= 0.03;
+                            krathong.position.x += Math.sin(floatProgress * 10) * 0.01; // ลอยพริ้วไหว
+                            krathong.position.y = 0.08 + Math.sin(floatProgress * 15) * 0.03; // คลื่นน้ำ
+
+                            if (krathong.position.z < -15) {
+                                clearInterval(floatInterval);
+                                scene.remove(krathong);
+                            }
+                        }, 30);
+
+                        // ตัวละครเดินกลับเข้าแถวเดิม
+                        setTimeout(() => {
+                            let backProgress = 0;
+                            const backInterval = setInterval(() => {
+                                backProgress += 0.025;
+                                avatar.position.z = THREE.MathUtils.lerp(targetZ, startZ, backProgress);
+                                avatar.position.y = 0.05 + Math.abs(Math.sin(backProgress * Math.PI * 10)) * 0.12;
+                                if (backProgress >= 1) clearInterval(backInterval);
+                            }, 30);
+                        }, 800);
+                    }
+                }, 30);
+            }
+
+            // 🎵 ระบบเสียง Web Audio Synth
+            let audioCtx;
+            function initAudio() {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            }
+
+            startBtn.addEventListener('click', () => {
+                startOverlay.style.display = 'none';
                 initAudio();
-                const now = audioCtx.currentTime;
+            });
 
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+            function triggerGift(tier) {
+                totalCount++;
+                totalCountEl.innerText = totalCount;
 
-                if (tier <= 3) {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(523.25, now);
-                    osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.3);
-                    gain.gain.setValueAtTime(0.4, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                } else if (tier === 4) {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(300, now);
-                    osc.frequency.exponentialRampToValueAtTime(900, now + 0.8);
-                    gain.gain.setValueAtTime(0
+                // เลือกสุ่มตัวละคร 1 ตัวเดินถือกระทงไปลอยที่แม่น้ำ
+                const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
+                animateWalkToRiver(randomAvatar);
+            }
+
+            document.querySelectorAll('.btn-tier[data-tier]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    triggerGift(btn.getAttribute('data-tier'));
+                });
+            });
+
+            if (socket) {
+                socket.on('new_gift', (data) => {
+                    triggerGift(1);
+                });
+            }
+
+            // Render Loop
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Responsive Screen
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        });
+    </script>
+</body>
+</html>
