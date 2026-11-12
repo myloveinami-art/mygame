@@ -186,15 +186,15 @@
             toggleBtn.addEventListener('click', () => testPanel.classList.toggle('show'));
 
             // ==========================================
-            // 1. วาดภาพฉากหลังวันลอยกระทงให้เต็มหน้าจอ (Full Bleed Background)
+            // 1. ฉากหลังรูปถ่าย + ออกแบบลานยืนและสะพานท่าน้ำ
             // ==========================================
             const bgImg = new Image();
             bgImg.crossOrigin = "anonymous";
             bgImg.src = '/bg_wat_arun.jpg';
 
-            function drawBackground() {
+            function drawBackgroundAndPier(time) {
+                // 1.1 วาดรูปถ่ายฉากหลังเต็ม Canvas
                 if (bgImg.complete && bgImg.naturalWidth > 0) {
-                    // วาดภาพฉากหลังปรับอัตราส่วนคลุมเต็ม Canvas (Cover fill)
                     const imgRatio = bgImg.naturalWidth / bgImg.naturalHeight;
                     const canvasRatio = W / H;
                     let renderW, renderH, offsetX, offsetY;
@@ -218,10 +218,73 @@
                     ctx.fillStyle = skyGrad;
                     ctx.fillRect(0, 0, W, H);
                 }
+
+                // 1.2 ออกแบบลานยืนรอสีไม้ไทยโบราณ (โกลเด้นบราวน์) ด้านล่าง
+                const pierStartY = H * 0.72;
+
+                // ตัวลานไม้ด้านล่าง
+                const woodGrad = ctx.createLinearGradient(0, pierStartY, 0, H);
+                woodGrad.addColorStop(0, '#2c1e14');
+                woodGrad.addColorStop(0.3, '#1c120b');
+                woodGrad.addColorStop(1, '#0e0804');
+                ctx.fillStyle = woodGrad;
+                ctx.fillRect(0, pierStartY, W, H - pierStartY);
+
+                // ลายแผ่นไม้กระดานขนาน
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.12)';
+                ctx.lineWidth = 1.5;
+                for (let y = pierStartY + 20; y < H; y += 24) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(W, y);
+                    ctx.stroke();
+                }
+
+                // ขอบตลิ่งไม้ประดับสีทองเรืองแสง
+                ctx.fillStyle = '#d4a338';
+                ctx.fillRect(0, pierStartY - 4, W, 5);
+                ctx.fillStyle = '#6e4719';
+                ctx.fillRect(0, pierStartY + 1, W, 6);
+
+                // 1.3 ออกแบบสะพานท่าน้ำยื่น 5 จุด สอดคล้องกับคอลัมน์คนเดินไปลอย
+                const pierCols = [0.16, 0.33, 0.50, 0.67, 0.84];
+                pierCols.forEach(cx => {
+                    const px = cx * W;
+                    const topY = H * 0.56; // จุดปลายท่าน้ำติดผิวน้ำ
+
+                    // เงาสะพานท่าน้ำลงผิวน้ำ
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                    ctx.fillRect(px - 26, topY, 52, pierStartY - topY + 10);
+
+                    // พื้นสะพานไม้
+                    const bridgeGrad = ctx.createLinearGradient(px - 22, 0, px + 22, 0);
+                    bridgeGrad.addColorStop(0, '#3d2819');
+                    bridgeGrad.addColorStop(0.5, '#5c3e27');
+                    bridgeGrad.addColorStop(1, '#2c1c11');
+                    ctx.fillStyle = bridgeGrad;
+                    ctx.fillRect(px - 22, topY, 44, pierStartY - topY);
+
+                    // ขอบสะพานสีทอง
+                    ctx.fillStyle = '#ffd700';
+                    ctx.fillRect(px - 24, topY, 4, pierStartY - topY);
+                    ctx.fillRect(px + 20, topY, 4, pierStartY - topY);
+
+                    // ขอบปลายท่าน้ำประดับดอกไม้เรืองแสง
+                    ctx.fillStyle = '#ffb703';
+                    ctx.fillRect(px - 24, topY - 3, 48, 4);
+
+                    // เสาโคมไฟประดับปลายท่าน้ำ ซ้าย-ขวา
+                    const glow = 0.8 + Math.sin(time * 0.006 + cx * 10) * 0.2;
+                    ctx.fillStyle = `rgba(255, 200, 50, ${glow})`;
+                    ctx.beginPath();
+                    ctx.arc(px - 20, topY - 8, 6, 0, Math.PI * 2);
+                    ctx.arc(px + 20, topY - 8, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                });
             }
 
             // ==========================================
-            // 2. สุ่มคละตัวละคร 100+ รูปแบบ & วางตำแหน่งลานท่าน้ำตามรูปถ่ายจริง
+            // 2. สุ่มคละตัวละคร 100+ รูปแบบ & วางตำแหน่งยืนบนลานไม้
             // ==========================================
             const tops = ['#ff595e', '#ffca3a', '#ff70a6', '#4cc9f0', '#8ac926', '#f77f00', '#9d4edd', '#00bbf9', '#f15bb5', '#fee440'];
             const bottoms = ['#6a040f', '#3a0ca3', '#8338ec', '#1d3557', '#2b2d42', '#540b0e', '#38b000', '#0077b6', '#7209b7', '#d90429'];
@@ -245,21 +308,20 @@
             }
 
             const characters = [];
-            // ปรับระดับ Y ให้อยู่ช่วงลานลอยกระทงล่างสุดของรูปถ่าย (75% - 94%)
-            const rows = [0.76, 0.84, 0.92];
-            const cols = [0.15, 0.32, 0.50, 0.68, 0.85];
+            // วางตัวละครยืนบนลานไม้ด้านล่าง (Y: 77% - 92%)
+            const rows = [0.78, 0.85, 0.92];
+            const cols = [0.16, 0.33, 0.50, 0.67, 0.84];
 
             rows.forEach((ry) => {
                 cols.forEach((cx) => {
-                    const jitterX = (Math.random() - 0.5) * 0.05;
+                    const jitterX = (Math.random() - 0.5) * 0.03;
                     const jitterY = (Math.random() - 0.5) * 0.02;
                     characters.push({
                         homeX: cx + jitterX,
                         homeY: ry + jitterY,
                         x: cx + jitterX,
                         y: ry + jitterY,
-                        // กำหนดจุดขอบท่าน้ำที่เดินไปลอยกระทงตามความเฉียงของราวท่าน้ำในภาพ
-                        targetWaterY: 0.55 + (cx * 0.08), 
+                        targetWaterY: 0.565, // จุดปลายสะพานท่าน้ำ
                         style: generateRandomStyle(),
                         state: 'idle',
                         walkPhase: Math.random() * Math.PI * 2,
@@ -272,8 +334,7 @@
             function drawCartoonCharacter(ch, time) {
                 const px = ch.x * W;
                 const py = ch.y * H;
-                // ปรับขนาดตัวละครย่อขยายตามระยะใกล้-ไกล
-                let scale = 0.58 + (ch.y - 0.52) * 0.75;
+                let scale = 0.68 + (ch.y - 0.56) * 0.85;
                 if (ch.style.isChild) scale *= 0.78;
 
                 ctx.save();
@@ -284,7 +345,8 @@
                 const bobY = isMoving ? Math.abs(Math.sin(ch.walkPhase)) * -4 : Math.sin(time * 0.003 + ch.walkPhase) * 1.2;
                 const legSwing = isMoving ? Math.sin(ch.walkPhase) * 6 : 0;
 
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                // เงาใต้เท้าบนพื้นไม้
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
                 ctx.beginPath();
                 ctx.ellipse(0, 0, 18, 6, 0, 0, Math.PI * 2);
                 ctx.fill();
@@ -384,7 +446,7 @@
             }
 
             // ==========================================
-            // 3. กระทง / โคมลอย / พลุ 3D
+            // 3. กระทง / โคมลอย / พลุ
             // ==========================================
             function drawKrathongArt(x, y, tier, scale, time) {
                 ctx.save();
@@ -654,20 +716,20 @@
                 requestAnimationFrame(loop);
                 ctx.clearRect(0, 0, W, H);
 
-                // 1. วาดรูปฉากหลังเต็มหน้าจอ
-                drawBackground();
+                // 1. วาดฉากหลังรูปถ่าย + ลานไม้และสะพานท่าน้ำ
+                drawBackgroundAndPier(time);
 
-                // 2. กระทงลอยในแม่น้ำ (ลอยเฉียงจากท่าน้ำไปทางกลางแม่น้ำ)
+                // 2. กระทงลอยออกไปกลางแม่น้ำจากปลายสะพานท่าน้ำ
                 for (let i = floatingKrathongs.length - 1; i >= 0; i--) {
                     const k = floatingKrathongs[i];
                     k.y -= 0.0004; // ความเร็วช้าลง 20%
-                    k.x -= 0.00015; // ลอยตามกระแสน้ำในภาพ
-                    const progress = (0.58 - k.y) / (0.58 - 0.46);
-                    const scale = Math.max(0.18, 0.7 * (1 - progress * 0.7));
+                    k.x -= 0.00018; // ลอยตามกระแสน้ำไปทางซ้าย
+                    const progress = (0.565 - k.y) / (0.565 - 0.45);
+                    const scale = Math.max(0.18, 0.65 * (1 - progress * 0.7));
 
                     drawKrathongArt(k.x * W, k.y * H, k.tier, scale, time);
 
-                    if (k.y <= 0.46) {
+                    if (k.y <= 0.45) {
                         floatingKrathongs.splice(i, 1);
                     }
                 }
@@ -685,7 +747,7 @@
                     }
                 }
 
-                // 4. การเดินของตัวละคร (ช้าลง 20% และเดินไปริมแม่น้ำในภาพถ่าย)
+                // 4. เดินจากลานไม้ ขึ้นสะพานท่าน้ำไปลอยกระทงที่ปลายสะพาน (ช้าลง 20%)
                 const sortedChars = [...characters].sort((a, b) => a.y - b.y);
                 sortedChars.forEach(ch => {
                     if (ch.state === 'walkingUp') {
@@ -694,9 +756,9 @@
                         if (ch.y <= ch.targetWaterY) {
                             ch.y = ch.targetWaterY;
                             if (ch.heldTier === 4) {
-                                floatingLanterns.push({ x: ch.x, y: ch.y - 0.05, seed: Math.random() * 10 });
+                                floatingLanterns.push({ x: ch.x, y: ch.y - 0.04, seed: Math.random() * 10 });
                             } else {
-                                floatingKrathongs.push({ x: ch.x, y: ch.y - 0.01, tier: ch.heldTier, seed: Math.random() * 10 });
+                                floatingKrathongs.push({ x: ch.x, y: ch.y - 0.005, tier: ch.heldTier, seed: Math.random() * 10 });
                             }
 
                             if (ch.heldTier >= 5) {
