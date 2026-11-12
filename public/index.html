@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Loy Krathong 3D Live Stream</title>
+    <title>Loy Krathong 3D Wat Arun Live</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -17,7 +17,7 @@
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            background-color: #020712;
+            background-color: #030917;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
@@ -30,15 +30,53 @@
             z-index: 1;
         }
 
-        /* 🔘 หน้าจอต้อนรับเพื่อปลดล็อกเสียงบนมือถือ */
+        /* ป้ายชื่อและโปรไฟล์ลอยเหนือตัวละคร 3D */
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 5;
+            overflow: hidden;
+        }
+        .player-tag {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.3s;
+        }
+        .player-tag img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+            margin-bottom: 2px;
+        }
+        .player-tag span {
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 7px;
+            border-radius: 10px;
+            border: 1px solid #ffd700;
+            white-space: nowrap;
+        }
+
+        /* หน้าจอต้อนรับปลดล็อกเสียง */
         #start-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(2, 7, 18, 0.92);
-            backdrop-filter: blur(10px);
+            background: radial-gradient(circle at center, rgba(12, 26, 54, 0.92), rgba(2, 6, 15, 0.98));
+            backdrop-filter: blur(8px);
             z-index: 9999;
             display: flex;
             flex-direction: column;
@@ -50,23 +88,23 @@
         }
         #start-btn {
             margin-top: 24px;
-            padding: 16px 32px;
-            font-size: 18px;
+            padding: 15px 30px;
+            font-size: 17px;
             font-weight: bold;
-            color: #020712;
-            background: linear-gradient(135deg, #ffd700, #ff9800);
+            color: #030917;
+            background: linear-gradient(135deg, #ffe066, #ff9800);
             border: none;
             border-radius: 30px;
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
             cursor: pointer;
         }
 
-        /* 🏆 ป้ายนับยอดกระทงมุมขวาบน */
+        /* ป้ายนับยอดกระทงมุมขวาบน */
         #counter-box {
             position: absolute;
             top: 15px;
             right: 15px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(3, 9, 23, 0.8);
             backdrop-filter: blur(6px);
             border: 1.5px solid #ffd700;
             border-radius: 20px;
@@ -75,26 +113,25 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 12px rgba(255, 215, 0, 0.35);
             z-index: 100;
         }
-        #counter-box .title {
-            font-size: 11px;
-            color: #ffe066;
-        }
+        #counter-box .title { font-size: 11px; color: #ffe066; }
         #counter-box .number {
             font-size: 20px;
             font-weight: 800;
             color: #ffd700;
             text-shadow: 0 0 8px #ff9800;
+            transition: transform 0.2s;
         }
+        .counter-pop { transform: scale(1.35); }
 
-        /* 🎛️ ปุ่มเครื่องมือทดสอบ */
+        /* ปุ่มเครื่องมือทดสอบ */
         #toggle-panel-btn {
             position: absolute;
             top: 15px;
             left: 15px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(3, 9, 23, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
             padding: 7px 14px;
@@ -102,8 +139,8 @@
             font-size: 11px;
             cursor: pointer;
             z-index: 101;
+            backdrop-filter: blur(6px);
         }
-
         #test-panel {
             position: absolute;
             top: 52px;
@@ -112,15 +149,13 @@
             flex-direction: column;
             gap: 6px;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(3, 9, 23, 0.92);
             padding: 12px;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            width: 160px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            width: 155px;
         }
-        #test-panel.show {
-            display: flex;
-        }
+        #test-panel.show { display: flex; }
         .btn-tier {
             padding: 7px 10px;
             color: white;
@@ -136,22 +171,26 @@
 <body>
 
     <div id="start-overlay">
-        <h2>🪷 ระบบลอยกระทง 3D Interactive 🪷</h2>
-        <p style="font-size: 13px; margin-top: 8px; color: #ffe066;">แตะปุ่มด้านล่างเพื่อเปิดระบบเสียงและเข้าสู่ฉากลอยกระทง 3D</p>
-        <button id="start-btn">🎵 เริ่มต้นใช้งาน</button>
+        <div style="font-size: 48px; margin-bottom: 10px;">🪷🌕🏯</div>
+        <h2>ลอยกระทงวัดอรุณฯ 3D Live</h2>
+        <p style="font-size: 13px; margin-top: 8px; color: #ffe066;">แตะปุ่มด้านล่างเพื่อเปิดเพลงรำวงวันลอยกระทงและเริ่มไลฟ์</p>
+        <button id="start-btn">🎵 เข้าสู่งานลอยกระทง</button>
     </div>
 
     <div id="canvas-container"></div>
+    <div id="labels-container"></div>
 
     <button id="toggle-panel-btn">⚙️ เครื่องมือ</button>
 
     <div id="test-panel">
-        <button id="sound-toggle" class="btn-tier" style="background:#ff9800; color:#000; text-align:center;">🔊 เสียง: เปิด</button>
-        <button class="btn-tier" data-tier="1" style="background: #8ecae6; color:#000;">T1: ลอยกระทงเล็ก</button>
-        <button class="btn-tier" data-tier="2" style="background: #2a9d8f;">T2: ลอยกระทงตอง</button>
-        <button class="btn-tier" data-tier="3" style="background: #e9c46a; color:#000;">T3: ลอยกระทงทอง</button>
-        <button class="btn-tier" data-tier="4" style="background: #f4a261;">T4: ปล่อยโคมลอย</button>
-        <button class="btn-tier" data-tier="5" style="background: #e76f51;">T5: จุดพลุฉลอง</button>
+        <button id="sound-toggle" class="btn-tier" style="background:#ff9800; color:#000; text-align:center;">🔊 เสียงเพลง: เปิด</button>
+        <button class="btn-tier" data-tier="1" style="background: #8ecae6; color:#000;">T1: กระทงดอกไม้จิ๋ว</button>
+        <button class="btn-tier" data-tier="2" style="background: #2a9d8f;">T2: กระทงใบตอง</button>
+        <button class="btn-tier" data-tier="3" style="background: #e9c46a; color:#000;">T3: กระทงทองคำ</button>
+        <button class="btn-tier" data-tier="4" style="background: #f4a261;">T4: โคมลอยขึ้นฟ้า</button>
+        <button class="btn-tier" data-tier="5" style="background: #e76f51;">T5: กระทงทอง + พลุ</button>
+        <button class="btn-tier" data-tier="6" style="background: #d62828;">T6: มังกรฟ้า + พลุใหญ่</button>
+        <button class="btn-tier" data-tier="7" style="background: #9d4edd;">T7: จักรวาลอลังการ</button>
     </div>
 
     <div id="counter-box">
@@ -167,6 +206,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const socket = typeof io !== 'undefined' ? io() : null;
             const container = document.getElementById('canvas-container');
+            const labelsContainer = document.getElementById('labels-container');
             const totalCountEl = document.getElementById('total-count');
             const startOverlay = document.getElementById('start-overlay');
             const startBtn = document.getElementById('start-btn');
@@ -176,204 +216,646 @@
             let totalCount = 0;
             let soundEnabled = true;
 
-            toggleBtn.addEventListener('click', () => {
-                testPanel.classList.toggle('show');
-            });
+            toggleBtn.addEventListener('click', () => testPanel.classList.toggle('show'));
 
-            // --- 🎥 ตั้งค่า Three.js 3D Scene ---
+            // ==========================================
+            // 1. ตั้งค่าฉาก 3D และท้องฟ้ายามค่ำคืน
+            // ==========================================
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x020712);
-            scene.fog = new THREE.FogExp2(0x020712, 0.025);
+            scene.background = new THREE.Color(0x040b1a);
+            scene.fog = new THREE.FogExp2(0x040b1a, 0.018);
 
-            const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 4.5, 11);
-            camera.lookAt(0, 1.5, -2);
+            const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 4.2, 10.5);
+            camera.lookAt(0, 1.8, -4);
 
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
-            // 💡 แสงสว่างคืนวันเพ็ญ
-            const ambientLight = new THREE.AmbientLight(0x405070, 0.8);
+            // แสงสว่างในฉาก
+            const ambientLight = new THREE.AmbientLight(0x6b8cce, 0.9);
             scene.add(ambientLight);
 
-            const moonLight = new THREE.DirectionalLight(0xffea79, 1.2);
-            moonLight.position.set(8, 15, -10);
+            const moonLight = new THREE.DirectionalLight(0xffeaa7, 1.3);
+            moonLight.position.set(10, 18, -15);
             scene.add(moonLight);
 
-            // 🌕 ดวงจันทร์ 3D
-            const moonGeo = new THREE.SphereGeometry(2, 32, 32);
-            const moonMat = new THREE.MeshBasicMaterial({ color: 0xfffae6 });
-            const moon = new THREE.Mesh(moonGeo, moonMat);
-            moon.position.set(8, 14, -20);
-            scene.add(moon);
+            // แสงสีทองส่ององค์พระปรางค์วัดอรุณฯ
+            const templeSpotLight = new THREE.PointLight(0xffb703, 3.5, 25);
+            templeSpotLight.position.set(0, 5, -14);
+            scene.add(templeSpotLight);
 
-            // 🌊 แม่น้ำเจ้าพระยา (ด้านหน้า Z: -3 ถึง -15)
-            const riverGeo = new THREE.PlaneGeometry(30, 20);
-            const riverMat = new THREE.MeshStandardMaterial({ color: 0x051a30, roughness: 0.1, metalness: 0.8 });
-            const river = new THREE.Mesh(riverGeo, riverMat);
+            // ดวงจันทร์เต็มดวง + รัศมี
+            const moonGroup = new THREE.Group();
+            const moonMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(2.2, 32, 32),
+                new THREE.MeshBasicMaterial({ color: 0xfff8d6 })
+            );
+            const moonHalo = new THREE.Mesh(
+                new THREE.SphereGeometry(2.8, 32, 32),
+                new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.2 })
+            );
+            moonGroup.add(moonMesh, moonHalo);
+            moonGroup.position.set(7.5, 11.5, -24);
+            scene.add(moonGroup);
+
+            // ดวงดาวระยิบระยับบนท้องฟ้า
+            const starGeo = new THREE.BufferGeometry();
+            const starVertices = [];
+            for (let i = 0; i < 400; i++) {
+                starVertices.push(
+                    (Math.random() - 0.5) * 80,
+                    Math.random() * 35 + 3,
+                    -Math.random() * 45 - 10
+                );
+            }
+            starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+            const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.15 }));
+            scene.add(stars);
+
+            // ==========================================
+            // 2. สร้างฉากหลังวัดอรุณฯ ริมแม่น้ำเจ้าพระยา
+            // ==========================================
+            const watArunGroup = new THREE.Group();
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd166, emissive: 0x996515, emissiveIntensity: 0.4, roughness: 0.3, metalness: 0.7 });
+            const whitePrangMat = new THREE.MeshStandardMaterial({ color: 0xf8f9fa, emissive: 0x3d2c00, emissiveIntensity: 0.25, roughness: 0.5 });
+
+            // ฐานพระปรางค์
+            const baseTier1 = new THREE.Mesh(new THREE.BoxGeometry(10, 1.2, 6), whitePrangMat);
+            baseTier1.position.y = 0.6;
+            const baseTier2 = new THREE.Mesh(new THREE.BoxGeometry(7.5, 1.2, 4.5), goldMat);
+            baseTier2.position.y = 1.8;
+            watArunGroup.add(baseTier1, baseTier2);
+
+            // องค์พระปรางค์ประธานตรงกลาง
+            const mainPrang = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 1.8, 6.5, 12), whitePrangMat);
+            mainPrang.position.y = 5.4;
+            const mainSpire = new THREE.Mesh(new THREE.ConeGeometry(0.42, 2.2, 12), goldMat);
+            mainSpire.position.y = 9.7;
+            watArunGroup.add(mainPrang, mainSpire);
+
+            // ปรางค์ทิศ 4 มุม
+            const sidePositions = [[-3.2, 1.2], [3.2, 1.2], [-3.2, -1.2], [3.2, -1.2]];
+            sidePositions.forEach(([px, pz]) => {
+                const subPrang = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.9, 3.8, 10), whitePrangMat);
+                subPrang.position.set(px, 4.0, pz);
+                const subSpire = new THREE.Mesh(new THREE.ConeGeometry(0.26, 1.2, 10), goldMat);
+                subSpire.position.set(px, 6.5, pz);
+                watArunGroup.add(subPrang, subSpire);
+            });
+
+            watArunGroup.position.set(0, 0, -18);
+            scene.add(watArunGroup);
+
+            // แม่น้ำเจ้าพระยา (Z: -2.2 ถึง -16)
+            const river = new THREE.Mesh(
+                new THREE.PlaneGeometry(50, 16),
+                new THREE.MeshStandardMaterial({ color: 0x061a33, roughness: 0.15, metalness: 0.85 })
+            );
             river.rotation.x = -Math.PI / 2;
-            river.position.set(0, 0, -8);
+            river.position.set(0, 0, -10);
             scene.add(river);
 
-            // 🧱 ตลิ่ง/ลานทางเดิน (ด้านหลัง Z: -3 ถึง 10)
-            const groundGeo = new THREE.PlaneGeometry(30, 15);
-            const groundMat = new THREE.MeshStandardMaterial({ color: 0x1a2636, roughness: 0.9 });
-            const ground = new THREE.Mesh(groundGeo, groundMat);
-            ground.rotation.x = -Math.PI / 2;
-            ground.position.set(0, 0.05, 4.5);
-            scene.add(ground);
+            // เงาสะท้อนแสงวัดอรุณฯ บนผิวน้ำ
+            const waterGlow = new THREE.Mesh(
+                new THREE.PlaneGeometry(12, 10),
+                new THREE.MeshBasicMaterial({ color: 0xffb703, transparent: true, opacity: 0.14 })
+            );
+            waterGlow.rotation.x = -Math.PI / 2;
+            waterGlow.position.set(0, 0.02, -10);
+            scene.add(waterGlow);
 
-            // 🕯️ ฟังก์ชันสร้างโมเดลกระทง 3D
-            function createKrathongMesh() {
-                const group = new THREE.Group();
-                // ฐานใบตอง
-                const baseGeo = new THREE.CylinderGeometry(0.4, 0.45, 0.15, 12);
-                const baseMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f });
-                const base = new THREE.Mesh(baseGeo, baseMat);
-                group.add(base);
+            // ท่าน้ำและลานทางเดินริมตลิ่ง (Z: -2.2 ถึง 10)
+            const pier = new THREE.Mesh(
+                new THREE.BoxGeometry(30, 0.3, 13),
+                new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
+            );
+            pier.position.set(0, 0.05, 4.3);
+            scene.add(pier);
 
-                // ดอกไม้/เทียน
-                const candleGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.3, 8);
-                const candleMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-                const candle = new THREE.Mesh(candleGeo, candleMat);
-                candle.position.y = 0.2;
-                group.add(candle);
+            // ขอบกั้นท่าน้ำประดับเสาไฟ
+            const edgeTrim = new THREE.Mesh(
+                new THREE.BoxGeometry(30, 0.15, 0.3),
+                new THREE.MeshStandardMaterial({ color: 0xffd166, metalness: 0.6 })
+            );
+            edgeTrim.position.set(0, 0.22, -2.1);
+            scene.add(edgeTrim);
 
-                // แสงเทียนเรืองแสง
-                const light = new THREE.PointLight(0xffaa00, 1.5, 3);
-                light.position.y = 0.4;
-                group.add(light);
-
-                return group;
-            }
-
-            // 👤 ฟังก์ชันสร้างตัวละคร 3D
+            // ==========================================
+            // 3. ตัวละครการ์ตูน 3D สไตล์ Chibi ชุดไทย
+            // ==========================================
             const avatars = [];
-            function createAvatar(x, z) {
+            const shirtColors = [0xff595e, 0xffca3a, 0x8ac926, 0x1982c4, 0x6a4c93, 0xff70a6, 0x00bbf9];
+
+            function createCartoonAvatar(x, z) {
                 const group = new THREE.Group();
-                
-                // หัว
-                const headGeo = new THREE.SphereGeometry(0.28, 16, 16);
-                const headMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-                const head = new THREE.Mesh(headGeo, headMat);
-                head.position.y = 1.35;
+                const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac, roughness: 0.5 });
+                const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
+                const shirtColor = shirtColors[Math.floor(Math.random() * shirtColors.length)];
+                const shirtMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.6 });
+                const pantsMat = new THREE.MeshStandardMaterial({ color: 0x2b2d42, roughness: 0.7 });
+
+                // หัวการ์ตูนกลมโตน่ารัก
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 20, 20), skinMat);
+                head.position.y = 1.48;
                 group.add(head);
 
-                // ตัว (ชุดไทย/เสื้อสีสดใส)
-                const bodyGeo = new THREE.CylinderGeometry(0.22, 0.32, 0.95, 16);
-                const bodyMat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
-                const body = new THREE.Mesh(bodyGeo, bodyMat);
-                body.position.y = 0.65;
-                group.add(body);
+                // ทรงผม
+                const hair = new THREE.Mesh(new THREE.SphereGeometry(0.335, 20, 20, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat);
+                hair.position.y = 1.51;
+                hair.rotation.x = -0.2;
+                group.add(hair);
 
-                group.position.set(x, 0.05, z);
+                // ดวงตาการ์ตูน
+                const eyeGeo = new THREE.SphereGeometry(0.035, 8, 8);
+                const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+                const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+                leftEye.position.set(-0.1, 1.48, -0.29);
+                const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+                rightEye.position.set(0.1, 1.48, -0.29);
+                group.add(leftEye, rightEye);
+
+                // ลำตัวเสื้อไทย
+                const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.62, 16), shirtMat);
+                torso.position.y = 0.92;
+                group.add(torso);
+
+                // แขนซ้าย-ขวา (สำหรับถือกระทง)
+                const armGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.45, 10);
+                const leftArm = new THREE.Mesh(armGeo, skinMat);
+                leftArm.position.set(-0.26, 0.95, -0.1);
+                leftArm.rotation.x = 0.4;
+
+                const rightArm = new THREE.Mesh(armGeo, skinMat);
+                rightArm.position.set(0.26, 0.95, -0.1);
+                rightArm.rotation.x = 0.4;
+                group.add(leftArm, rightArm);
+
+                // ขาซ้าย-ขวา (สำหรับขยับก้าวเดิน)
+                const legGeo = new THREE.CylinderGeometry(0.075, 0.065, 0.5, 10);
+                const leftLeg = new THREE.Mesh(legGeo, pantsMat);
+                leftLeg.position.set(-0.11, 0.42, 0);
+
+                const rightLeg = new THREE.Mesh(legGeo, pantsMat);
+                rightLeg.position.set(0.11, 0.42, 0);
+                group.add(leftLeg, rightLeg);
+
+                group.userData = { leftLeg, rightLeg, leftArm, rightArm, isBusy: false };
+                group.position.set(x, 0.2, z);
                 scene.add(group);
                 return group;
             }
 
-            // สร้างตัวละครยืนเป็นแถวเรียงกันริมตลิ่ง
-            for(let x = -4; x <= 4; x += 1.3) {
-                for(let z = 3; z <= 7; z += 1.6) {
-                    avatars.push(createAvatar(x, z));
+            // จัดวางตัวละครยืนกระจายอย่างเป็นธรรมชาติบนลานท่าน้ำ
+            for (let x = -3.6; x <= 3.6; x += 1.45) {
+                for (let z = 1.8; z <= 6.2; z += 1.6) {
+                    const offsetX = x + (Math.random() - 0.5) * 0.4;
+                    const offsetZ = z + (Math.random() - 0.5) * 0.4;
+                    avatars.push(createCartoonAvatar(offsetX, offsetZ));
                 }
             }
 
-            // 🚶‍♂️ แอนิเมชัน: ถือกระทงเดินไปริมน้ำ -> วางกระทงลงแม่น้ำ -> กระทงค่อยๆ ลอยออกไป
-            function animateWalkToRiver(avatar) {
-                const startX = avatar.position.x;
+            // ==========================================
+            // 4. สร้างกระทง 3 ระดับ + โคมลอย + พลุ 3D
+            // ==========================================
+            function createKrathongByTier(tier) {
+                const group = new THREE.Group();
+
+                if (tier === 1) {
+                    // T1: กระทงดอกไม้จิ๋ว (กะทัดรัด สีเขียวใบตอง + ดอกบัวชมพู)
+                    const base = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.26, 0.22, 0.12, 12),
+                        new THREE.MeshStandardMaterial({ color: 0x40916c })
+                    );
+                    const flower = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.18, 0.15, 8),
+                        new THREE.MeshStandardMaterial({ color: 0xff758f })
+                    );
+                    flower.position.y = 0.12;
+                    group.add(base, flower);
+                } else if (tier === 2) {
+                    // T2: กระทงใบตองประดับกลีบดอกไม้ 2 ชั้น
+                    const base = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.38, 0.32, 0.16, 16),
+                        new THREE.MeshStandardMaterial({ color: 0x2d6a4f })
+                    );
+                    const ring = new THREE.Mesh(
+                        new THREE.TorusGeometry(0.28, 0.06, 8, 16),
+                        new THREE.MeshStandardMaterial({ color: 0xffb703 })
+                    );
+                    ring.rotation.x = Math.PI / 2;
+                    ring.position.y = 0.09;
+                    group.add(base, ring);
+                } else {
+                    // T3, T5, T6, T7: กระทงทองคำใหญ่หรูหรา + รัศมีเรืองแสง
+                    const base = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.5, 0.4, 0.22, 20),
+                        new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xb8860b, emissiveIntensity: 0.4, metalness: 0.8, roughness: 0.2 })
+                    );
+                    const crown = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.32, 0.32, 12),
+                        new THREE.MeshStandardMaterial({ color: 0xffea00, emissive: 0xff9800, emissiveIntensity: 0.5 })
+                    );
+                    crown.position.y = 0.24;
+                    group.add(base, crown);
+                }
+
+                // เทียนและเปลวไฟเรืองแสง
+                const flame = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.05, 8, 8),
+                    new THREE.MeshBasicMaterial({ color: 0xffea00 })
+                );
+                flame.position.y = tier >= 3 ? 0.45 : 0.26;
+                const light = new THREE.PointLight(0xffaa00, tier >= 3 ? 2.5 : 1.5, 4);
+                light.position.y = 0.5;
+                group.add(flame, light);
+
+                return group;
+            }
+
+            function createSkyLantern() {
+                const group = new THREE.Group();
+                const body = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.35, 0.24, 0.65, 12),
+                    new THREE.MeshBasicMaterial({ color: 0xff9f1c })
+                );
+                const light = new THREE.PointLight(0xff9f1c, 2.5, 6);
+                group.add(body, light);
+                return group;
+            }
+
+            // ระบบพลุ 3D บนท้องฟ้า
+            const activeFireworks = [];
+            function spawn3DFirework(x, y, z, colorHex) {
+                const particleCount = 60;
+                const geo = new THREE.BufferGeometry();
+                const positions = [];
+                const velocities = [];
+
+                for (let i = 0; i < particleCount; i++) {
+                    positions.push(x, y, z);
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    const speed = Math.random() * 0.14 + 0.05;
+                    velocities.push({
+                        x: Math.sin(phi) * Math.cos(theta) * speed,
+                        y: Math.cos(phi) * speed,
+                        z: Math.sin(phi) * Math.sin(theta) * speed
+                    });
+                }
+                geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                const mat = new THREE.PointsMaterial({ color: colorHex, size: 0.25, transparent: true, opacity: 1 });
+                const points = new THREE.Points(geo, mat);
+                scene.add(points);
+                activeFireworks.push({ points, velocities, life: 1.0 });
+            }
+
+            // ==========================================
+            // 5. แอนิเมชันตัวละครเดินไปลอยกระทง + ป้ายชื่อ
+            // ==========================================
+            const activeTags = [];
+
+            function createPlayerTag(avatar, username, avatarUrl) {
+                const tagEl = document.createElement('div');
+                tagEl.className = 'player-tag';
+                tagEl.innerHTML = `<img src="${avatarUrl}" onerror="this.style.display='none'"><span>${username}</span>`;
+                labelsContainer.appendChild(tagEl);
+                const tagObj = { avatar, el: tagEl };
+                activeTags.push(tagObj);
+                return tagObj;
+            }
+
+            function removePlayerTag(tagObj) {
+                const idx = activeTags.indexOf(tagObj);
+                if (idx > -1) activeTags.splice(idx, 1);
+                tagObj.el.remove();
+            }
+
+            function performLoyKrathongAction(tier, username, avatarUrl) {
+                // เลือกตัวละครที่ว่างอยู่
+                const available = avatars.filter(a => !a.userData.isBusy);
+                const avatar = available.length > 0
+                    ? available[Math.floor(Math.random() * available.length)]
+                    : avatars[Math.floor(Math.random() * avatars.length)];
+
+                avatar.userData.isBusy = true;
                 const startZ = avatar.position.z;
-                const targetZ = -2.8; // จุดริมแม่น้ำ
+                const targetZ = -1.75; // ริมขอบท่าน้ำ
 
-                // สร้างกระทงให้ตัวละครถือ
-                const krathong = createKrathongMesh();
-                krathong.position.set(0, 0.8, -0.4);
-                avatar.add(krathong);
+                const tagObj = createPlayerTag(avatar, username, avatarUrl);
 
-                let progress = 0;
-                const walkInterval = setInterval(() => {
-                    progress += 0.025;
-                    avatar.position.z = THREE.MathUtils.lerp(startZ, targetZ, progress);
-                    avatar.position.y = 0.05 + Math.abs(Math.sin(progress * Math.PI * 10)) * 0.12;
+                // สร้างไอเทมในมือ (T4 ถือโคมลอย, นอกนั้นถือกระทงตามระดับ)
+                const isLantern = (tier === 4);
+                const heldItem = isLantern ? createSkyLantern() : createKrathongByTier(tier);
+                heldItem.position.set(0, 0.95, -0.45);
+                avatar.add(heldItem);
 
-                    if (progress >= 1) {
-                        clearInterval(walkInterval);
+                // ยกแขนถือของ
+                avatar.userData.leftArm.rotation.x = 1.1;
+                avatar.userData.rightArm.rotation.x = 1.1;
 
-                        // 🪷 วางกระทงลงน้ำ
-                        avatar.remove(krathong);
-                        krathong.position.set(avatar.position.x, 0.1, targetZ);
-                        scene.add(krathong);
+                let step = 0;
+                const walkTimer = setInterval(() => {
+                    step += 0.022;
+                    avatar.position.z = THREE.MathUtils.lerp(startZ, targetZ, step);
 
-                        // กระทงค่อยๆ ลอยออกไปตามแม่น้ำ
-                        let floatProgress = 0;
-                        const floatInterval = setInterval(() => {
-                            floatProgress += 0.005;
-                            krathong.position.z -= 0.03;
-                            krathong.position.x += Math.sin(floatProgress * 10) * 0.01; // ลอยพริ้วไหว
-                            krathong.position.y = 0.08 + Math.sin(floatProgress * 15) * 0.03; // คลื่นน้ำ
+                    // ขยับขาก้าวเดินซ้าย-ขวา
+                    const swing = Math.sin(step * Math.PI * 14) * 0.55;
+                    avatar.userData.leftLeg.rotation.x = swing;
+                    avatar.userData.rightLeg.rotation.x = -swing;
+                    avatar.position.y = 0.2 + Math.abs(Math.sin(step * Math.PI * 14)) * 0.08;
 
-                            if (krathong.position.z < -15) {
-                                clearInterval(floatInterval);
-                                scene.remove(krathong);
-                            }
-                        }, 30);
+                    if (step >= 1) {
+                        clearInterval(walkTimer);
+                        avatar.userData.leftLeg.rotation.x = 0;
+                        avatar.userData.rightLeg.rotation.x = 0;
+                        avatar.position.y = 0.2;
 
-                        // ตัวละครเดินกลับเข้าแถวเดิม
-                        setTimeout(() => {
-                            let backProgress = 0;
-                            const backInterval = setInterval(() => {
-                                backProgress += 0.025;
-                                avatar.position.z = THREE.MathUtils.lerp(targetZ, startZ, backProgress);
-                                avatar.position.y = 0.05 + Math.abs(Math.sin(backProgress * Math.PI * 10)) * 0.12;
-                                if (backProgress >= 1) clearInterval(backInterval);
+                        // ปล่อยไอเทมออกจากมือ
+                        avatar.remove(heldItem);
+
+                        if (isLantern) {
+                            // T4: ปล่อยโคมลอยขึ้นท้องฟ้า
+                            heldItem.position.set(avatar.position.x, 1.3, targetZ - 0.5);
+                            scene.add(heldItem);
+                            let skyT = 0;
+                            const skyTimer = setInterval(() => {
+                                skyT += 0.01;
+                                heldItem.position.y += 0.045;
+                                heldItem.position.z -= 0.02;
+                                heldItem.position.x += Math.sin(skyT * 8) * 0.015;
+                                if (heldItem.position.y > 16) {
+                                    clearInterval(skyTimer);
+                                    scene.remove(heldItem);
+                                }
                             }, 30);
-                        }, 800);
+                        } else {
+                            // วางกระทงลงแม่น้ำหน้าวัดอรุณฯ
+                            heldItem.position.set(avatar.position.x, 0.08, -2.5);
+                            scene.add(heldItem);
+                            let floatT = 0;
+                            const floatTimer = setInterval(() => {
+                                floatT += 0.01;
+                                heldItem.position.z -= 0.022;
+                                heldItem.position.x += Math.sin(floatT * 6) * 0.008;
+                                heldItem.position.y = 0.07 + Math.sin(floatT * 12) * 0.02;
+                                if (heldItem.position.z < -15) {
+                                    clearInterval(floatTimer);
+                                    scene.remove(heldItem);
+                                }
+                            }, 30);
+                        }
+
+                        // ถ้าเป็น Tier 5-7 จุดพลุ 3D เหนือวัดอรุณฯ
+                        if (tier >= 5) {
+                            const colors = [0xff0055, 0x00e5ff, 0xffd700, 0x9d4edd, 0x00ff88];
+                            const burstCount = tier === 5 ? 2 : (tier === 6 ? 4 : 7);
+                            for (let b = 0; b < burstCount; b++) {
+                                setTimeout(() => {
+                                    spawn3DFirework(
+                                        (Math.random() - 0.5) * 12,
+                                        Math.random() * 5 + 6,
+                                        -14 - Math.random() * 4,
+                                        colors[Math.floor(Math.random() * colors.length)]
+                                    );
+                                }, b * 350);
+                            }
+                        }
+
+                        // ลดแขนลงแล้วเดินกลับเข้าที่เดิม
+                        avatar.userData.leftArm.rotation.x = 0.3;
+                        avatar.userData.rightArm.rotation.x = 0.3;
+
+                        setTimeout(() => {
+                            let backStep = 0;
+                            const backTimer = setInterval(() => {
+                                backStep += 0.025;
+                                avatar.position.z = THREE.MathUtils.lerp(targetZ, startZ, backStep);
+                                const backSwing = Math.sin(backStep * Math.PI * 14) * 0.55;
+                                avatar.userData.leftLeg.rotation.x = backSwing;
+                                avatar.userData.rightLeg.rotation.x = -backSwing;
+
+                                if (backStep >= 1) {
+                                    clearInterval(backTimer);
+                                    avatar.userData.leftLeg.rotation.x = 0;
+                                    avatar.userData.rightLeg.rotation.x = 0;
+                                    avatar.userData.isBusy = false;
+                                    removePlayerTag(tagObj);
+                                }
+                            }, 30);
+                        }, 900);
                     }
                 }, 30);
             }
 
-            // 🎵 ระบบเสียง Web Audio Synth
-            let audioCtx;
+            // ==========================================
+            // 6. ระบบเสียงเพลง "รำวงวันลอยกระทง" ของไทย
+            // ==========================================
+            let audioCtx = null;
+            let songTimer = null;
+
             function initAudio() {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if (audioCtx.state === 'suspended') audioCtx.resume();
             }
 
+            // ทำนองเพลง "รำวงวันลอยกระทง" (วันเพ็ญเดือนสิบสอง น้ำก็นองเต็มตลิ่ง...)
+            const loyKrathongSong = [
+                // วัน-เพ็ญ-เดือน-สิบ-สอง
+                { f: 392.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 523.25, d: 0.70 },
+                // น้ำ-ก็-นอง-เต็ม-ต-ลิ่ง
+                { f: 440.00, d: 0.35 }, { f: 523.25, d: 0.35 }, { f: 587.33, d: 0.35 }, { f: 523.25, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 392.00, d: 0.70 },
+                // เรา-ทั้ง-หลาย-ชาย-หญิง
+                { f: 392.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 523.25, d: 0.70 },
+                // ส-นุก-กัน-จริง-วัน-ลอย-ก-ระ-ทง
+                { f: 440.00, d: 0.25 }, { f: 523.25, d: 0.25 }, { f: 587.33, d: 0.35 }, { f: 659.25, d: 0.50 },
+                { f: 587.33, d: 0.35 }, { f: 523.25, d: 0.35 }, { f: 440.00, d: 0.25 }, { f: 392.00, d: 0.25 }, { f: 523.25, d: 0.85 },
+                // ลอย-ลอย-ก-ระ-ทง (ท่อนฮุค)
+                { f: 659.25, d: 0.55 }, { f: 659.25, d: 0.55 }, { f: 587.33, d: 0.25 }, { f: 523.25, d: 0.25 }, { f: 587.33, d: 0.70 },
+                // ลอย-ลอย-ก-ระ-ทง
+                { f: 523.25, d: 0.55 }, { f: 523.25, d: 0.55 }, { f: 440.00, d: 0.25 }, { f: 392.00, d: 0.25 }, { f: 440.00, d: 0.70 },
+                // ลอย-ก-ระ-ทง-กัน-แล้ว-ขอ-เชิญ-น้อง-แก้ว-ออก-มา-รำ-วง
+                { f: 392.00, d: 0.35 }, { f: 440.00, d: 0.25 }, { f: 523.25, d: 0.25 }, { f: 587.33, d: 0.35 }, { f: 659.25, d: 0.35 }, { f: 587.33, d: 0.50 },
+                { f: 523.25, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 392.00, d: 0.35 }, { f: 329.63, d: 0.35 },
+                { f: 392.00, d: 0.35 }, { f: 440.00, d: 0.35 }, { f: 523.25, d: 0.35 }, { f: 523.25, d: 0.90 }
+            ];
+
+            let noteIdx = 0;
+            function playNextSongNote() {
+                if (!soundEnabled || !audioCtx) return;
+
+                const note = loyKrathongSong[noteIdx];
+                const now = audioCtx.currentTime;
+
+                // เสียงทำนองหลัก (เสียงระนาด/ขลุ่ยนุ่มนวล)
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(note.f, now);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.14, now + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + note.d * 0.95);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + note.d);
+
+                // เสียงฉิ่งประกอบจังหวะรำวง ("ฉิ่ง" - "ฉับ")
+                if (noteIdx % 2 === 0) {
+                    const chingOsc = audioCtx.createOscillator();
+                    const chingGain = audioCtx.createGain();
+                    chingOsc.type = 'sine';
+                    chingOsc.frequency.setValueAtTime(noteIdx % 4 === 0 ? 2400 : 1800, now);
+                    chingGain.gain.setValueAtTime(0.03, now);
+                    chingGain.gain.exponentialRampToValueAtTime(0.0001, now + (noteIdx % 4 === 0 ? 0.25 : 0.08));
+                    chingOsc.connect(chingGain);
+                    chingGain.connect(audioCtx.destination);
+                    chingOsc.start(now);
+                    chingOsc.stop(now + 0.25);
+                }
+
+                noteIdx = (noteIdx + 1) % loyKrathongSong.length;
+                songTimer = setTimeout(playNextSongNote, note.d * 1000);
+            }
+
+            function playGiftFx(tier) {
+                if (!soundEnabled) return;
+                initAudio();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                if (tier >= 5) {
+                    // เสียงพลุแตก
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(35, now + 0.6);
+                    gain.gain.setValueAtTime(0.35, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                } else {
+                    // เสียงกระดิ่งใสตอนปล่อยกระทง/โคม
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, now);
+                    osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.35);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                }
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            }
+
             startBtn.addEventListener('click', () => {
                 startOverlay.style.display = 'none';
                 initAudio();
+                if (soundEnabled && !songTimer) playNextSongNote();
             });
 
-            function triggerGift(tier) {
-                totalCount++;
-                totalCountEl.innerText = totalCount;
+            const soundBtn = document.getElementById('sound-toggle');
+            soundBtn.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                soundBtn.innerHTML = soundEnabled ? '🔊 เสียงเพลง: เปิด' : '🔇 เสียงเพลง: ปิด';
+                soundBtn.style.background = soundEnabled ? '#ff9800' : '#757575';
+                if (soundEnabled) {
+                    initAudio();
+                    if (!songTimer) playNextSongNote();
+                } else if (songTimer) {
+                    clearTimeout(songTimer);
+                    songTimer = null;
+                }
+            });
 
-                // เลือกสุ่มตัวละคร 1 ตัวเดินถือกระทงไปลอยที่แม่น้ำ
-                const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
-                animateWalkToRiver(randomAvatar);
+            // ==========================================
+            // 7. เชื่อมต่อ TikTok LIVE & ปุ่มทดสอบ 7 ระดับ
+            // ==========================================
+            const giftTierMap = {
+                'Rose': 1, 'TikTok': 1,
+                'Finger Heart': 2, 'Doughnut': 2,
+                'Perfume': 3, 'Cap': 3,
+                'Paper Crane': 4,
+                'Fireworks': 5,
+                'Dragon': 6,
+                'Universe': 7
+            };
+
+            function handleNewGift(username, avatarUrl, giftName, forcedTier = null) {
+                const tier = forcedTier || giftTierMap[giftName] || 1;
+                totalCount++;
+                totalCountEl.innerText = totalCount.toLocaleString();
+                totalCountEl.classList.add('counter-pop');
+                setTimeout(() => totalCountEl.classList.remove('counter-pop'), 200);
+
+                playGiftFx(tier);
+                performLoyKrathongAction(tier, username, avatarUrl);
+            }
+
+            if (socket) {
+                socket.on('new_gift', (data) => {
+                    handleNewGift(data.username, data.avatarUrl, data.giftName);
+                });
             }
 
             document.querySelectorAll('.btn-tier[data-tier]').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    triggerGift(btn.getAttribute('data-tier'));
+                    const tier = parseInt(btn.getAttribute('data-tier'));
+                    const mockUsers = ['พี่โอ๊ต', 'สายมู', 'น้องแป้ง', 'NARAPONZ'];
+                    const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
+                    const avatar = 'https://p16-va.tiktokcdn.com/musically-maliva-obj/1665203342371846~c5_100x100.jpeg';
+                    handleNewGift(randomUser, avatar, '', tier);
                 });
             });
 
-            if (socket) {
-                socket.on('new_gift', (data) => {
-                    triggerGift(1);
-                });
-            }
-
-            // Render Loop
+            // ==========================================
+            // 8. Render Loop อัปเดตภาพ 3D พลุ และป้ายชื่อ
+            // ==========================================
             function animate() {
                 requestAnimationFrame(animate);
+
+                // อัปเดตตำแหน่งป้ายชื่อให้อยู่เหนือหัวตัวละคร 3D เสมอ
+                activeTags.forEach(tag => {
+                    const pos = tag.avatar.position.clone();
+                    pos.y += 1.95;
+                    pos.project(camera);
+                    const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (-(pos.y * 0.5) + 0.5) * window.innerHeight;
+                    tag.el.style.left = `${x}px`;
+                    tag.el.style.top = `${y}px`;
+                });
+
+                // อัปเดตพลุ 3D บนท้องฟ้า
+                for (let i = activeFireworks.length - 1; i >= 0; i--) {
+                    const fw = activeFireworks[i];
+                    const posAttr = fw.points.geometry.attributes.position;
+                    for (let j = 0; j < fw.velocities.length; j++) {
+                        posAttr.setXYZ(
+                            j,
+                            posAttr.getX(j) + fw.velocities[j].x,
+                            posAttr.getY(j) + fw.velocities[j].y,
+                            posAttr.getZ(j) + fw.velocities[j].z
+                        );
+                        fw.velocities[j].y -= 0.002; // แรงโน้มถ่วง
+                    }
+                    posAttr.needsUpdate = true;
+                    fw.life -= 0.018;
+                    fw.points.material.opacity = fw.life;
+                    if (fw.life <= 0) {
+                        scene.remove(fw.points);
+                        activeFireworks.splice(i, 1);
+                    }
+                }
+
+                // แสงสะท้อนน้ำกระเพื่อมเบาๆ
+                waterGlow.material.opacity = 0.12 + Math.sin(Date.now() * 0.003) * 0.03;
+
                 renderer.render(scene, camera);
             }
             animate();
 
-            // Responsive Screen
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
