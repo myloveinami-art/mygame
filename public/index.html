@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Loy Krathong Wat Arun Live 9:16</title>
+    <title>Loy Krathong Real Wat Arun Live 9:16</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * {
@@ -65,7 +65,7 @@
             position: absolute;
             top: 15px;
             right: 15px;
-            background: rgba(4, 9, 26, 0.8);
+            background: rgba(4, 9, 26, 0.85);
             backdrop-filter: blur(6px);
             border: 1.5px solid #ffd700;
             border-radius: 20px;
@@ -92,7 +92,7 @@
             position: absolute;
             top: 15px;
             left: 15px;
-            background: rgba(4, 9, 26, 0.8);
+            background: rgba(4, 9, 26, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
             padding: 7px 14px;
@@ -133,7 +133,7 @@
 
     <div id="start-overlay">
         <div style="font-size: 48px; margin-bottom: 10px;">🪷🌕🏯</div>
-        <h2>ลอยกระทงวัดอรุณฯ 2.5D Live</h2>
+        <h2>ลอยกระทงวัดอรุณฯ Live 9:16</h2>
         <p style="font-size: 13px; margin-top: 8px; color: #ffe066;">แตะปุ่มด้านล่างเพื่อเปิดเพลงรำวงวันลอยกระทงและเริ่มงาน</p>
         <button id="start-btn">🎵 เข้าสู่งานลอยกระทง</button>
     </div>
@@ -186,164 +186,43 @@
             toggleBtn.addEventListener('click', () => testPanel.classList.toggle('show'));
 
             // ==========================================
-            // 1. วาดฉากหลังวัดอรุณฯ คืนวันเพ็ญระดับงานอาร์ต
+            // 1. โหลดรูปภาพจริงของวัดอรุณราชวรารามยามค่ำคืน
             // ==========================================
-            const stars = Array.from({ length: 70 }, () => ({
-                x: Math.random(),
-                y: Math.random() * 0.42,
-                r: Math.random() * 1.5 + 0.5,
-                twinkle: Math.random() * Math.PI * 2
-            }));
+            const realWatArunImg = new Image();
+            realWatArunImg.crossOrigin = "Anonymous";
+            realWatArunImg.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Wat_Arun_night_Bangkok_Thailand.jpg/800px-Wat_Arun_night_Bangkok_Thailand.jpg';
 
-            function drawBackground(time) {
-                const horizonY = H * 0.44;
+            function drawRealBackground(time) {
                 const pierTopY = H * 0.64;
 
-                // 1. ท้องฟ้ายามค่ำคืนไล่เฉดสีน้ำเงินเข้ม-ม่วงคราม
-                const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
-                skyGrad.addColorStop(0, '#04091a');
-                skyGrad.addColorStop(0.55, '#0b1d42');
-                skyGrad.addColorStop(1, '#1a3668');
-                ctx.fillStyle = skyGrad;
-                ctx.fillRect(0, 0, W, horizonY);
-
-                // ดวงดาวระยิบระยับ
-                stars.forEach(s => {
-                    const alpha = 0.4 + 0.6 * Math.abs(Math.sin(time * 0.002 + s.twinkle));
-                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                    ctx.beginPath();
-                    ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-
-                // 2. พระจันทร์เต็มดวงเรืองแสงนวล
-                const moonX = W * 0.78;
-                const moonY = H * 0.16;
-                const moonR = Math.min(W, H) * 0.085;
-                const moonGlow = ctx.createRadialGradient(moonX, moonY, moonR * 0.5, moonX, moonY, moonR * 3.2);
-                moonGlow.addColorStop(0, 'rgba(255, 248, 214, 0.95)');
-                moonGlow.addColorStop(0.35, 'rgba(255, 224, 102, 0.35)');
-                moonGlow.addColorStop(1, 'rgba(255, 224, 102, 0)');
-                ctx.fillStyle = moonGlow;
-                ctx.beginPath();
-                ctx.arc(moonX, moonY, moonR * 3.2, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = '#fffdf0';
-                ctx.beginPath();
-                ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 3. วาดองค์พระปรางค์วัดอรุณราชวรารามเรืองแสงสีทองอร่าม
-                drawWatArun(W * 0.46, horizonY, Math.min(W * 0.65, H * 0.34));
-
-                // 4. แม่น้ำเจ้าพระยา (ระหว่าง horizonY ถึง pierTopY)
-                const riverGrad = ctx.createLinearGradient(0, horizonY, 0, pierTopY);
-                riverGrad.addColorStop(0, '#071936');
-                riverGrad.addColorStop(0.5, '#0c2752');
-                riverGrad.addColorStop(1, '#06152d');
-                ctx.fillStyle = riverGrad;
-                ctx.fillRect(0, horizonY, W, pierTopY - horizonY);
-
-                // เงาสะท้อนสีทองของวัดอรุณฯ และดวงจันทร์บนผิวน้ำ
-                ctx.save();
-                for (let i = 0; i < 18; i++) {
-                    const waveY = horizonY + ((pierTopY - horizonY) * (i / 18));
-                    const waveW = (W * 0.35) * (1 - i * 0.03) + Math.sin(time * 0.004 + i) * 12;
-                    ctx.fillStyle = `rgba(255, 195, 50, ${0.18 - i * 0.008})`;
-                    ctx.beginPath();
-                    ctx.ellipse(W * 0.46 + Math.sin(time * 0.003 + i) * 6, waveY, waveW, 2.5, 0, 0, Math.PI * 2);
-                    ctx.fill();
+                if (realWatArunImg.complete && realWatArunImg.naturalWidth !== 0) {
+                    // วาดรูปถ่ายจริงของวัดอรุณฯ ในโซนครึ่งบนของ Canvas
+                    ctx.drawImage(realWatArunImg, 0, 0, W, pierTopY);
+                } else {
+                    // ท้องฟ้าสำรองกรณีรอลดรูปภาพ
+                    const skyGrad = ctx.createLinearGradient(0, 0, 0, pierTopY);
+                    skyGrad.addColorStop(0, '#04091a');
+                    skyGrad.addColorStop(1, '#0c2752');
+                    ctx.fillStyle = skyGrad;
+                    ctx.fillRect(0, 0, W, pierTopY);
                 }
-                ctx.restore();
 
-                // 5. ท่าน้ำและลานทางเดินริมแม่น้ำ (พื้นล่าง)
+                // 2. ท่าน้ำและลานทางเดินริมแม่น้ำ (ครึ่งล่าง)
                 const pierGrad = ctx.createLinearGradient(0, pierTopY, 0, H);
                 pierGrad.addColorStop(0, '#222b3d');
                 pierGrad.addColorStop(1, '#111622');
                 ctx.fillStyle = pierGrad;
                 ctx.fillRect(0, pierTopY, W, H - pierTopY);
 
-                // ขอบท่าน้ำประดับลายไทยสีทองและโคมไฟเสา
-                ctx.fillStyle = '#d4a338';
-                ctx.fillRect(0, pierTopY - 4, W, 6);
+                // ขอบท่าน้ำประดับลายทอง
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(0, pierTopY - 3, W, 5);
                 ctx.fillStyle = '#3b475e';
-                ctx.fillRect(0, pierTopY + 2, W, 10);
-
-                // เสาไฟริมท่าน้ำซ้าย-ขวา
-                drawPierLantern(W * 0.12, pierTopY, time);
-                drawPierLantern(W * 0.88, pierTopY, time);
-            }
-
-            function drawWatArun(cx, baseY, scaleH) {
-                ctx.save();
-                // แสงออร่าสีทองหลังพระปรางค์
-                const aura = ctx.createRadialGradient(cx, baseY - scaleH * 0.45, 10, cx, baseY - scaleH * 0.45, scaleH * 0.85);
-                aura.addColorStop(0, 'rgba(255, 190, 40, 0.45)');
-                aura.addColorStop(1, 'rgba(255, 150, 0, 0)');
-                ctx.fillStyle = aura;
-                ctx.beginPath();
-                ctx.arc(cx, baseY - scaleH * 0.45, scaleH * 0.85, 0, Math.PI * 2);
-                ctx.fill();
-
-                // ฟังก์ชันวาดทรงพระปรางค์ซ้อนชั้นวิจิตร
-                function drawPrangTower(x, y, w, h) {
-                    const grad = ctx.createLinearGradient(x - w / 2, y - h, x + w / 2, y);
-                    grad.addColorStop(0, '#fff3b0');
-                    grad.addColorStop(0.5, '#f4a261');
-                    grad.addColorStop(1, '#9c6615');
-                    ctx.fillStyle = grad;
-
-                    // ฐานซ้อน 3 ชั้น
-                    ctx.fillRect(x - w * 0.65, y - h * 0.15, w * 1.3, h * 0.15);
-                    ctx.fillRect(x - w * 0.52, y - h * 0.28, w * 1.04, h * 0.13);
-
-                    // เรือนธาตุโค้งเรียวขึ้นยอด
-                    ctx.beginPath();
-                    ctx.moveTo(x - w * 0.42, y - h * 0.28);
-                    ctx.quadraticCurveTo(x - w * 0.35, y - h * 0.68, x, y - h);
-                    ctx.quadraticCurveTo(x + w * 0.35, y - h * 0.68, x + w * 0.42, y - h * 0.28);
-                    ctx.closePath();
-                    ctx.fill();
-
-                    // ลวดลายชั้นบัวสีทองคาดขวาง
-                    ctx.strokeStyle = '#ffea79';
-                    ctx.lineWidth = 1.5;
-                    for (let tier = 0.35; tier <= 0.82; tier += 0.11) {
-                        const tw = w * (0.42 * (1 - (tier - 0.28) * 1.25));
-                        ctx.beginPath();
-                        ctx.moveTo(x - tw, y - h * tier);
-                        ctx.lineTo(x + tw, y - h * tier);
-                        ctx.stroke();
-                    }
-                }
-
-                // ปรางค์ทิศซ้าย-ขวา
-                drawPrangTower(cx - scaleH * 0.48, baseY, scaleH * 0.28, scaleH * 0.56);
-                drawPrangTower(cx + scaleH * 0.48, baseY, scaleH * 0.28, scaleH * 0.56);
-                // องค์พระปรางค์ประธานตรงกลาง
-                drawPrangTower(cx, baseY, scaleH * 0.44, scaleH * 0.96);
-
-                // กำแพงแก้วริมน้ำหน้าวัด
-                ctx.fillStyle = '#e9c46a';
-                ctx.fillRect(cx - scaleH * 0.85, baseY - 10, scaleH * 1.7, 10);
-                ctx.restore();
-            }
-
-            function drawPierLantern(x, y, time) {
-                ctx.save();
-                ctx.fillStyle = '#4a3511';
-                ctx.fillRect(x - 3, y - 42, 6, 42);
-                const glow = 0.85 + Math.sin(time * 0.008) * 0.15;
-                ctx.fillStyle = `rgba(255, 200, 60, ${glow})`;
-                ctx.beginPath();
-                ctx.arc(x, y - 48, 9, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
+                ctx.fillRect(0, pierTopY + 2, W, 8);
             }
 
             // ==========================================
-            // 2. ตัวละครการ์ตูนชุดไทย Chibi สวยงามมีชีวิตชีวา
+            // 2. ตัวละครการ์ตูนชุดไทย Chibi (คงเดิมตามที่พี่โอ๊ตถูกใจ)
             // ==========================================
             const outfitStyles = [
                 { top: '#ff595e', bottom: '#6a040f', gender: 'F', hair: '#1b1b1b' },
@@ -368,11 +247,10 @@
                         x: cx + jitterX,
                         y: ry + jitterY,
                         style: outfitStyles[(rIdx * 5 + cIdx) % outfitStyles.length],
-                        state: 'idle', // idle, walkingUp, placing, walkingBack
+                        state: 'idle',
                         walkPhase: Math.random() * Math.PI * 2,
                         heldTier: 0,
-                        username: '',
-                        avatarImg: null
+                        username: ''
                     });
                 });
             });
@@ -380,7 +258,6 @@
             function drawCartoonCharacter(ch, time) {
                 const px = ch.x * W;
                 const py = ch.y * H;
-                // ปรับขนาดตามระยะใกล้-ไกล (Perspective)
                 const scale = 0.72 + (ch.y - 0.62) * 1.15;
 
                 ctx.save();
@@ -391,7 +268,6 @@
                 const bobY = isMoving ? Math.abs(Math.sin(ch.walkPhase)) * -5 : Math.sin(time * 0.004 + ch.walkPhase) * 1.5;
                 const legSwing = isMoving ? Math.sin(ch.walkPhase) * 7 : 0;
 
-                // เงาใต้เท้าบนพื้นท่าน้ำ
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
                 ctx.beginPath();
                 ctx.ellipse(0, 0, 18, 6, 0, 0, Math.PI * 2);
@@ -399,21 +275,18 @@
 
                 ctx.translate(0, bobY);
 
-                // ขาซ้าย-ขวา
                 ctx.fillStyle = '#f4cba3';
                 ctx.beginPath();
                 ctx.roundRect(-9, -22 + legSwing * 0.5, 6, 20, 3);
                 ctx.roundRect(3, -22 - legSwing * 0.5, 6, 20, 3);
                 ctx.fill();
 
-                // รองเท้าแตะไทยน่ารัก
                 ctx.fillStyle = '#5c3a21';
                 ctx.beginPath();
                 ctx.ellipse(-6, -2 + legSwing * 0.5, 5, 2.5, 0, 0, Math.PI * 2);
                 ctx.ellipse(6, -2 - legSwing * 0.5, 5, 2.5, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                // ผ้านุ่งโจงกระเบน / ผ้าถุงไทย
                 ctx.fillStyle = ch.style.bottom;
                 ctx.beginPath();
                 ctx.moveTo(-13, -42);
@@ -423,18 +296,15 @@
                 ctx.closePath();
                 ctx.fill();
 
-                // เข็มขัดทองคาดเอว
                 ctx.fillStyle = '#ffd700';
                 ctx.fillRect(-13, -44, 26, 3.5);
 
-                // เสื้อไทย / สไบเฉียง (มุมมองด้านหลังเฉียงสวยงาม)
                 ctx.fillStyle = ch.style.top;
                 ctx.beginPath();
                 ctx.roundRect(-14, -66, 28, 24, 8);
                 ctx.fill();
 
                 if (ch.style.gender === 'F') {
-                    // ชายสไบพาดไหล่ด้านหลัง
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
                     ctx.beginPath();
                     ctx.moveTo(-11, -66);
@@ -445,20 +315,17 @@
                     ctx.fill();
                 }
 
-                // แขนซ้าย-ขวา
                 ctx.fillStyle = '#ffdbac';
                 ctx.beginPath();
                 ctx.roundRect(-18, -63, 5.5, 19, 3);
                 ctx.roundRect(12.5, -63, 5.5, 19, 3);
                 ctx.fill();
 
-                // ศีรษะการ์ตูน Chibi + ทรงผมละเอียด
                 ctx.fillStyle = '#ffdbac';
                 ctx.beginPath();
                 ctx.arc(0, -82, 17, 0, Math.PI * 2);
                 ctx.fill();
 
-                // ผมด้านหลัง
                 ctx.fillStyle = ch.style.hair;
                 ctx.beginPath();
                 ctx.arc(0, -84, 17.8, Math.PI * 0.85, Math.PI * 2.15);
@@ -466,12 +333,10 @@
                 ctx.quadraticCurveTo(-17, -70, -17.8, -84);
                 ctx.fill();
 
-                // ถ้าเป็นผู้หญิง เพิ่มมวยผมและปิ่นปักผมทองคำ
                 if (ch.style.gender === 'F') {
                     ctx.beginPath();
                     ctx.arc(0, -101, 7.5, 0, Math.PI * 2);
                     ctx.fill();
-                    // ปิ่นปักผมทอง
                     ctx.strokeStyle = '#ffd700';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
@@ -480,7 +345,6 @@
                     ctx.stroke();
                 }
 
-                // วาดกระทงหรือโคมลอยในมือขณะกำลังเดินไปลอย
                 if (ch.heldTier > 0) {
                     if (ch.heldTier === 4) {
                         drawLanternArt(0, -68, 0.65, time);
@@ -489,7 +353,6 @@
                     }
                 }
 
-                // ป้ายชื่อคนส่งของขวัญเหนือศีรษะ
                 if (ch.username) {
                     const tagY = ch.style.gender === 'F' ? -118 : -110;
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
@@ -511,7 +374,7 @@
             }
 
             // ==========================================
-            // 3. วาดกระทง 3 ระดับ + โคมลอย + พลุสวยงาม
+            // 3. วาดกระทง โคมลอย และพลุ 3D
             // ==========================================
             function drawKrathongArt(x, y, tier, scale, time) {
                 ctx.save();
@@ -528,7 +391,6 @@
                 ctx.fill();
 
                 if (tier === 1) {
-                    // T1: กระทงดอกไม้จิ๋ว
                     ctx.fillStyle = '#40916c';
                     ctx.beginPath();
                     ctx.ellipse(0, 0, 12, 5, 0, 0, Math.PI * 2);
@@ -538,7 +400,6 @@
                     ctx.arc(0, -4, 6, 0, Math.PI * 2);
                     ctx.fill();
                 } else if (tier === 2) {
-                    // T2: กระทงใบตองกลีบดอกไม้
                     ctx.fillStyle = '#2d6a4f';
                     ctx.beginPath();
                     ctx.ellipse(0, 0, 17, 7, 0, 0, Math.PI * 2);
@@ -550,7 +411,6 @@
                         ctx.fill();
                     }
                 } else {
-                    // T3+: กระทงทองคำหรูหรา
                     ctx.fillStyle = '#ffd700';
                     ctx.beginPath();
                     ctx.ellipse(0, 0, 22, 9, 0, 0, Math.PI * 2);
@@ -564,7 +424,6 @@
                     ctx.fill();
                 }
 
-                // เทียนและเปลวไฟกระพริบ
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(-1.5, -16, 3, 10);
                 const flicker = Math.sin(time * 0.02) * 1.2;
@@ -604,7 +463,6 @@
                 ctx.restore();
             }
 
-            // รายการกระทงที่ลอยในแม่น้ำ โคมลอยบนฟ้า และพลุ
             const floatingKrathongs = [];
             const floatingLanterns = [];
             const fireworks = [];
@@ -626,7 +484,7 @@
             }
 
             // ==========================================
-            // 4. ระบบเสียงเพลง "รำวงวันลอยกระทง" ของไทย
+            // 4. ระบบเสียงเพลง "รำวงวันลอยกระทง"
             // ==========================================
             let audioCtx = null;
             let songTimer = null;
@@ -732,7 +590,7 @@
             });
 
             // ==========================================
-            // 5. การเดินไปลอยกระทง + ปุ่มทดสอบ 7 ระดับ
+            // 5. ระบบการเดินไปลอยกระทง
             // ==========================================
             const giftTierMap = {
                 'Rose': 1, 'TikTok': 1,
@@ -785,10 +643,10 @@
                 requestAnimationFrame(loop);
                 ctx.clearRect(0, 0, W, H);
 
-                // วาดฉากหลังวัดอรุณฯ แม่น้ำ และท่าน้ำ
-                drawBackground(time);
+                // วาดรูปถ่ายจริงของวัดอรุณฯ ยามค่ำคืน
+                drawRealBackground(time);
 
-                // อัปเดตและวาดกระทงที่ลอยอยู่ในแม่น้ำ (ลอยไกลออกไปช้าๆ และเล็กลงตาม Perspective)
+                // อัปเดตและวาดกระทงลอยในแม่น้ำ
                 for (let i = floatingKrathongs.length - 1; i >= 0; i--) {
                     const k = floatingKrathongs[i];
                     k.y -= 0.00055;
@@ -803,7 +661,7 @@
                     }
                 }
 
-                // อัปเดตและวาดโคมลอยขึ้นสู่ท้องฟ้า
+                // อัปเดตและวาดโคมลอยขึ้นสู่ฟ้า
                 for (let i = floatingLanterns.length - 1; i >= 0; i--) {
                     const l = floatingLanterns[i];
                     l.y -= 0.0014;
@@ -816,7 +674,7 @@
                     }
                 }
 
-                // อัปเดตการเดินของตัวละคร (เรียงลำดับจากไกลมาใกล้เพื่อไม่ให้ซ้อนทับผิดมิติ)
+                // อัปเดตการเดินของตัวละครการ์ตูน
                 const sortedChars = [...characters].sort((a, b) => a.y - b.y);
                 sortedChars.forEach(ch => {
                     if (ch.state === 'walkingUp') {
@@ -824,14 +682,12 @@
                         ch.y -= 0.0022;
                         if (ch.y <= 0.655) {
                             ch.y = 0.655;
-                            // ปล่อยกระทงลงน้ำ หรือปล่อยโคมลอยขึ้นฟ้า
                             if (ch.heldTier === 4) {
                                 floatingLanterns.push({ x: ch.x, y: 0.56, seed: Math.random() * 10 });
                             } else {
                                 floatingKrathongs.push({ x: ch.x, y: 0.615, tier: ch.heldTier, seed: Math.random() * 10 });
                             }
 
-                            // จุดพลุฉลองถ้าเป็น Tier 5-7
                             if (ch.heldTier >= 5) {
                                 const fwColors = ['#ff0055', '#00e5ff', '#ffd700', '#ff9f1c', '#b5179e'];
                                 const count = ch.heldTier === 5 ? 2 : (ch.heldTier === 6 ? 4 : 7);
@@ -862,7 +718,7 @@
                     drawCartoonCharacter(ch, time);
                 });
 
-                // วาดพลุบนท้องฟ้า
+                // วาดพลุฉลอง
                 for (let i = fireworks.length - 1; i >= 0; i--) {
                     const fw = fireworks[i];
                     let alive = false;
