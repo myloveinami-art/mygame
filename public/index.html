@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Loy Krathong Live 9:16</title>
+    <title>Loy Krathong Live 9:16 - Wat Arun</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * {
@@ -27,6 +27,7 @@
             width: 100vw;
             height: 100vh;
             z-index: 1;
+            display: block;
         }
 
         /* หน้าจอต้อนรับปลดล็อกเสียง */
@@ -87,6 +88,33 @@
         }
         .counter-pop { transform: scale(1.35); }
 
+        /* ป้ายสถานะ Socket.IO และคิว */
+        #status-bar {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(4, 9, 26, 0.78);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            padding: 4px 10px;
+            font-size: 10px;
+            color: #ddd;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            background: #ff9800;
+        }
+        .dot.online { background: #00e676; box-shadow: 0 0 6px #00e676; }
+        .dot.offline { background: #ff1744; box-shadow: 0 0 6px #ff1744; }
+
         /* ปุ่มเครื่องมือทดสอบ */
         #toggle-panel-btn {
             position: absolute;
@@ -114,7 +142,7 @@
             padding: 12px;
             border-radius: 12px;
             border: 1px solid rgba(255, 215, 0, 0.3);
-            width: 160px;
+            width: 165px;
         }
         #test-panel.show { display: flex; }
         .btn-tier {
@@ -162,9 +190,14 @@
         <span class="title">ใบ</span>
     </div>
 
+    <div id="status-bar">
+        <span id="conn-dot" class="dot"></span>
+        <span id="conn-text">กำลังเชื่อมต่อ...</span>
+        <span id="queue-text" style="color:#ffe066;">| คิวรอ: 0</span>
+    </div>
+
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            const socket = typeof io !== 'undefined' ? io() : null;
             const canvas = document.getElementById('art-canvas');
             const ctx = canvas.getContext('2d');
             const totalCountEl = document.getElementById('total-count');
@@ -172,29 +205,73 @@
             const startBtn = document.getElementById('start-btn');
             const toggleBtn = document.getElementById('toggle-panel-btn');
             const testPanel = document.getElementById('test-panel');
+            const connDot = document.getElementById('conn-dot');
+            const connText = document.getElementById('conn-text');
+            const queueText = document.getElementById('queue-text');
 
-            let W = canvas.width = window.innerWidth;
-            let H = canvas.height = window.innerHeight;
+            let W = window.innerWidth;
+            let H = window.innerHeight;
             let totalCount = 0;
             let soundEnabled = true;
 
-            window.addEventListener('resize', () => {
-                W = canvas.width = window.innerWidth;
-                H = canvas.height = window.innerHeight;
-            });
+            // ==========================================
+            // 9. Responsive Canvas (รองรับหน้าจอมือถือ 9:16 และ Retina)
+            // ==========================================
+            function resizeCanvas() {
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                W = window.innerWidth;
+                H = window.innerHeight;
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width = W + 'px';
+                canvas.style.height = H + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
 
             toggleBtn.addEventListener('click', () => testPanel.classList.toggle('show'));
 
             // ==========================================
-            // 1. ฉากหลังรูปถ่าย + ออกแบบลานยืนและสะพานท่าน้ำ
+            // 1. ฉากหลัง + ระบบ Fallback สมบูรณ์ + โครงสร้างสะพานท่าน้ำ
             // ==========================================
             const bgImg = new Image();
             bgImg.crossOrigin = "anonymous";
+            let bgLoaded = false;
+            bgImg.onload = () => { bgLoaded = true; };
+            bgImg.onerror = () => { bgLoaded = false; };
             bgImg.src = '/bg_wat_arun.jpg';
 
+            // ตำแหน่งสะพานท่าน้ำ 5 สะพาน (ใช้ร่วมกันทั้งการวาดและการเดิน)
+            const PIER_BRIDGES_X = [0.16, 0.33, 0.50, 0.67, 0.84];
+            const PIER_DECK_Y = 0.73;   // ขอบลานไม้ยืนรอ
+            const PIER_WATER_Y = 0.575; // ปลายสะพานท่าน้ำจุดวางกระทง
+
+            function drawFallbackSkyAndRiver(time) {
+                const horizonY = H * 0.44;
+                const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+                skyGrad.addColorStop(0, '#020712');
+                skyGrad.addColorStop(0.6, '#091d42');
+                skyGrad.addColorStop(1, '#183b6e');
+                ctx.fillStyle = skyGrad;
+                ctx.fillRect(0, 0, W, horizonY);
+
+                // ดวงจันทร์เต็มดวง
+                ctx.fillStyle = '#fffdf0';
+                ctx.beginPath();
+                ctx.arc(W * 0.5, H * 0.16, Math.min(W, H) * 0.08, 0, Math.PI * 2);
+                ctx.fill();
+
+                // แม่น้ำเจ้าพระยา
+                const riverGrad = ctx.createLinearGradient(0, horizonY, 0, H * PIER_DECK_Y);
+                riverGrad.addColorStop(0, '#051428');
+                riverGrad.addColorStop(1, '#0b264a');
+                ctx.fillStyle = riverGrad;
+                ctx.fillRect(0, horizonY, W, H * PIER_DECK_Y - horizonY);
+            }
+
             function drawBackgroundAndPier(time) {
-                // 1.1 วาดรูปถ่ายฉากหลังเต็ม Canvas
-                if (bgImg.complete && bgImg.naturalWidth > 0) {
+                if (bgLoaded && bgImg.naturalWidth > 0) {
                     const imgRatio = bgImg.naturalWidth / bgImg.naturalHeight;
                     const canvasRatio = W / H;
                     let renderW, renderH, offsetX, offsetY;
@@ -212,79 +289,72 @@
                     }
                     ctx.drawImage(bgImg, offsetX, offsetY, renderW, renderH);
                 } else {
-                    const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
-                    skyGrad.addColorStop(0, '#040d1a');
-                    skyGrad.addColorStop(1, '#13284a');
-                    ctx.fillStyle = skyGrad;
-                    ctx.fillRect(0, 0, W, H);
+                    drawFallbackSkyAndRiver(time);
                 }
 
-                // 1.2 ออกแบบลานยืนรอสีไม้ไทยโบราณ (โกลเด้นบราวน์) ด้านล่าง
-                const pierStartY = H * 0.72;
-
-                // ตัวลานไม้ด้านล่าง
+                // วาดลานไม้ยืนรอ (Waiting Platform)
+                const pierStartY = H * PIER_DECK_Y;
                 const woodGrad = ctx.createLinearGradient(0, pierStartY, 0, H);
                 woodGrad.addColorStop(0, '#2c1e14');
-                woodGrad.addColorStop(0.3, '#1c120b');
-                woodGrad.addColorStop(1, '#0e0804');
+                woodGrad.addColorStop(0.35, '#1c120b');
+                woodGrad.addColorStop(1, '#0d0704');
                 ctx.fillStyle = woodGrad;
                 ctx.fillRect(0, pierStartY, W, H - pierStartY);
 
-                // ลายแผ่นไม้กระดานขนาน
+                // เส้นร่องแผ่นไม้
                 ctx.strokeStyle = 'rgba(255, 215, 0, 0.12)';
-                ctx.lineWidth = 1.5;
-                for (let y = pierStartY + 20; y < H; y += 24) {
+                ctx.lineWidth = 1.2;
+                for (let y = pierStartY + 18; y < H; y += 22) {
                     ctx.beginPath();
                     ctx.moveTo(0, y);
                     ctx.lineTo(W, y);
                     ctx.stroke();
                 }
 
-                // ขอบตลิ่งไม้ประดับสีทองเรืองแสง
+                // ขอบคิ้วทองลานไม้
                 ctx.fillStyle = '#d4a338';
-                ctx.fillRect(0, pierStartY - 4, W, 5);
-                ctx.fillStyle = '#6e4719';
-                ctx.fillRect(0, pierStartY + 1, W, 6);
+                ctx.fillRect(0, pierStartY - 3, W, 4);
 
-                // 1.3 ออกแบบสะพานท่าน้ำยื่น 5 จุด สอดคล้องกับคอลัมน์คนเดินไปลอย
-                const pierCols = [0.16, 0.33, 0.50, 0.67, 0.84];
-                pierCols.forEach(cx => {
+                // วาดสะพานท่าน้ำ 5 สะพานให้ตรงกับเลนเดิน
+                const topY = H * PIER_WATER_Y;
+                const bridgeHalfW = Math.max(18, W * 0.042);
+
+                PIER_BRIDGES_X.forEach(cx => {
                     const px = cx * W;
-                    const topY = H * 0.56; // จุดปลายท่าน้ำติดผิวน้ำ
 
-                    // เงาสะพานท่าน้ำลงผิวน้ำ
+                    // เงาสะพานในน้ำ
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-                    ctx.fillRect(px - 26, topY, 52, pierStartY - topY + 10);
+                    ctx.fillRect(px - bridgeHalfW - 3, topY, (bridgeHalfW + 3) * 2, pierStartY - topY + 6);
 
-                    // พื้นสะพานไม้
-                    const bridgeGrad = ctx.createLinearGradient(px - 22, 0, px + 22, 0);
+                    // ตัวพื้นสะพานไม้
+                    const bridgeGrad = ctx.createLinearGradient(px - bridgeHalfW, 0, px + bridgeHalfW, 0);
                     bridgeGrad.addColorStop(0, '#3d2819');
                     bridgeGrad.addColorStop(0.5, '#5c3e27');
                     bridgeGrad.addColorStop(1, '#2c1c11');
                     ctx.fillStyle = bridgeGrad;
-                    ctx.fillRect(px - 22, topY, 44, pierStartY - topY);
+                    ctx.fillRect(px - bridgeHalfW, topY, bridgeHalfW * 2, pierStartY - topY);
 
-                    // ขอบสะพานสีทอง
+                    // ราวสะพานสีทองซ้าย-ขวา
                     ctx.fillStyle = '#ffd700';
-                    ctx.fillRect(px - 24, topY, 4, pierStartY - topY);
-                    ctx.fillRect(px + 20, topY, 4, pierStartY - topY);
+                    ctx.fillRect(px - bridgeHalfW - 2, topY, 3, pierStartY - topY);
+                    ctx.fillRect(px + bridgeHalfW - 1, topY, 3, pierStartY - topY);
 
-                    // ขอบปลายท่าน้ำประดับดอกไม้เรืองแสง
+                    // ขอบปลายท่าน้ำ
                     ctx.fillStyle = '#ffb703';
-                    ctx.fillRect(px - 24, topY - 3, 48, 4);
+                    ctx.fillRect(px - bridgeHalfW - 2, topY - 3, (bridgeHalfW + 2) * 2, 4);
 
-                    // เสาโคมไฟประดับปลายท่าน้ำ ซ้าย-ขวา
-                    const glow = 0.8 + Math.sin(time * 0.006 + cx * 10) * 0.2;
-                    ctx.fillStyle = `rgba(255, 200, 50, ${glow})`;
+                    // เสาโคมไฟประดับปลายท่าน้ำ
+                    const glow = 0.75 + Math.sin(time * 0.006 + cx * 10) * 0.25;
+                    ctx.fillStyle = `rgba(255, 205, 60, ${glow})`;
                     ctx.beginPath();
-                    ctx.arc(px - 20, topY - 8, 6, 0, Math.PI * 2);
-                    ctx.arc(px + 20, topY - 8, 6, 0, Math.PI * 2);
+                    ctx.arc(px - bridgeHalfW, topY - 7, 5, 0, Math.PI * 2);
+                    ctx.arc(px + bridgeHalfW, topY - 7, 5, 0, Math.PI * 2);
                     ctx.fill();
                 });
             }
 
             // ==========================================
-            // 2. สุ่มคละตัวละคร 100+ รูปแบบ & วางตำแหน่งยืนบนลานไม้
+            // 2. ตัวละคร 30 คน (100+ สไตล์) รองรับแขกจำนวนมากบนลานท่าน้ำ
             // ==========================================
             const tops = ['#ff595e', '#ffca3a', '#ff70a6', '#4cc9f0', '#8ac926', '#f77f00', '#9d4edd', '#00bbf9', '#f15bb5', '#fee440'];
             const bottoms = ['#6a040f', '#3a0ca3', '#8338ec', '#1d3557', '#2b2d42', '#540b0e', '#38b000', '#0077b6', '#7209b7', '#d90429'];
@@ -307,26 +377,41 @@
                 };
             }
 
+            // สร้าง 30 ที่นั่งยืนรอ (3 แถว x 10 คอลัมน์) บนลานไม้
             const characters = [];
-            // วางตัวละครยืนบนลานไม้ด้านล่าง (Y: 77% - 92%)
-            const rows = [0.78, 0.85, 0.92];
-            const cols = [0.16, 0.33, 0.50, 0.67, 0.84];
+            const seatRows = [0.78, 0.85, 0.92];
+            const seatCols = [0.09, 0.18, 0.27, 0.36, 0.45, 0.55, 0.64, 0.73, 0.82, 0.91];
 
-            rows.forEach((ry) => {
-                cols.forEach((cx) => {
-                    const jitterX = (Math.random() - 0.5) * 0.03;
-                    const jitterY = (Math.random() - 0.5) * 0.02;
+            function getNearestBridgeX(x) {
+                let best = PIER_BRIDGES_X[0];
+                let minDist = Math.abs(x - best);
+                for (let i = 1; i < PIER_BRIDGES_X.length; i++) {
+                    const d = Math.abs(x - PIER_BRIDGES_X[i]);
+                    if (d < minDist) {
+                        minDist = d;
+                        best = PIER_BRIDGES_X[i];
+                    }
+                }
+                return best;
+            }
+
+            seatRows.forEach((ry) => {
+                seatCols.forEach((cx) => {
+                    const jx = (Math.random() - 0.5) * 0.015;
+                    const jy = (Math.random() - 0.5) * 0.012;
+                    const homeX = cx + jx;
+                    const homeY = ry + jy;
                     characters.push({
-                        homeX: cx + jitterX,
-                        homeY: ry + jitterY,
-                        x: cx + jitterX,
-                        y: ry + jitterY,
-                        targetWaterY: 0.565, // จุดปลายสะพานท่าน้ำ
-                        style: generateRandomStyle(),
-                        state: 'idle',
+                        homeX,
+                        homeY,
+                        x: homeX,
+                        y: homeY,
+                        bridgeX: getNearestBridgeX(homeX),
+                        state: 'idle', // idle -> alignToBridge -> walkOnBridge -> returnFromBridge -> returnHome
                         walkPhase: Math.random() * Math.PI * 2,
                         heldTier: 0,
-                        username: ''
+                        username: '',
+                        style: generateRandomStyle()
                     });
                 });
             });
@@ -334,110 +419,119 @@
             function drawCartoonCharacter(ch, time) {
                 const px = ch.x * W;
                 const py = ch.y * H;
-                let scale = 0.68 + (ch.y - 0.56) * 0.85;
+                let scale = 0.56 + (ch.y - PIER_WATER_Y) * 0.78;
                 if (ch.style.isChild) scale *= 0.78;
 
                 ctx.save();
                 ctx.translate(px, py);
                 ctx.scale(scale, scale);
 
-                const isMoving = (ch.state === 'walkingUp' || ch.state === 'walkingBack');
-                const bobY = isMoving ? Math.abs(Math.sin(ch.walkPhase)) * -4 : Math.sin(time * 0.003 + ch.walkPhase) * 1.2;
+                const isMoving = ch.state !== 'idle';
+                const bobY = isMoving ? Math.abs(Math.sin(ch.walkPhase)) * -4 : Math.sin(time * 0.003 + ch.walkPhase) * 1.1;
                 const legSwing = isMoving ? Math.sin(ch.walkPhase) * 6 : 0;
 
-                // เงาใต้เท้าบนพื้นไม้
+                // เงาใต้เท้า
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
                 ctx.beginPath();
-                ctx.ellipse(0, 0, 18, 6, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, 17, 5.5, 0, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.translate(0, bobY);
 
+                // ขา
                 ctx.fillStyle = ch.style.skin;
                 ctx.beginPath();
-                ctx.roundRect(-9, -22 + legSwing * 0.5, 6, 20, 3);
-                ctx.roundRect(3, -22 - legSwing * 0.5, 6, 20, 3);
+                ctx.roundRect(-8.5, -21 + legSwing * 0.5, 5.5, 19, 3);
+                ctx.roundRect(3, -21 - legSwing * 0.5, 5.5, 19, 3);
                 ctx.fill();
 
+                // โจงกระเบน / ผ้าถุง
                 ctx.fillStyle = ch.style.bottom;
                 ctx.beginPath();
-                ctx.moveTo(-13, -42);
-                ctx.lineTo(13, -42);
-                ctx.lineTo(15, -18);
-                ctx.lineTo(-15, -18);
+                ctx.moveTo(-12.5, -40);
+                ctx.lineTo(12.5, -40);
+                ctx.lineTo(14.5, -17);
+                ctx.lineTo(-14.5, -17);
                 ctx.closePath();
                 ctx.fill();
 
+                // เข็มขัดทอง
                 ctx.fillStyle = '#ffd700';
-                ctx.fillRect(-13, -44, 26, 3.5);
+                ctx.fillRect(-12.5, -42, 25, 3);
 
+                // เสื้อ
                 ctx.fillStyle = ch.style.top;
                 ctx.beginPath();
-                ctx.roundRect(-14, -66, 28, 24, 8);
+                ctx.roundRect(-13.5, -64, 27, 23, 7);
                 ctx.fill();
 
                 if (ch.style.gender === 'F') {
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
                     ctx.beginPath();
-                    ctx.moveTo(-11, -66);
-                    ctx.lineTo(-2, -66);
-                    ctx.lineTo(12, -32);
-                    ctx.lineTo(4, -32);
+                    ctx.moveTo(-10, -64);
+                    ctx.lineTo(-2, -64);
+                    ctx.lineTo(11, -31);
+                    ctx.lineTo(4, -31);
                     ctx.closePath();
                     ctx.fill();
                 }
 
+                // แขน
                 ctx.fillStyle = ch.style.skin;
                 ctx.beginPath();
-                ctx.roundRect(-18, -63, 5.5, 19, 3);
-                ctx.roundRect(12.5, -63, 5.5, 19, 3);
+                ctx.roundRect(-17.5, -61, 5, 18, 2.5);
+                ctx.roundRect(12.5, -61, 5, 18, 2.5);
                 ctx.fill();
 
+                // ศีรษะ
                 ctx.fillStyle = ch.style.skin;
                 ctx.beginPath();
-                ctx.arc(0, -82, 17, 0, Math.PI * 2);
+                ctx.arc(0, -80, 16, 0, Math.PI * 2);
                 ctx.fill();
 
+                // ผม
                 ctx.fillStyle = ch.style.hair;
                 ctx.beginPath();
-                ctx.arc(0, -84, 17.8, Math.PI * 0.85, Math.PI * 2.15);
-                ctx.quadraticCurveTo(17, -70, 0, -72);
-                ctx.quadraticCurveTo(-17, -70, -17.8, -84);
+                ctx.arc(0, -82, 16.8, Math.PI * 0.85, Math.PI * 2.15);
+                ctx.quadraticCurveTo(16, -68, 0, -70);
+                ctx.quadraticCurveTo(-16, -68, -16.8, -82);
                 ctx.fill();
 
                 if (ch.style.gender === 'F') {
                     ctx.beginPath();
-                    ctx.arc(0, -101, 7.5, 0, Math.PI * 2);
+                    ctx.arc(0, -98, 7, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.strokeStyle = '#ffd700';
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = 1.8;
                     ctx.beginPath();
-                    ctx.moveTo(-11, -103);
-                    ctx.lineTo(11, -99);
+                    ctx.moveTo(-10, -100);
+                    ctx.lineTo(10, -96);
                     ctx.stroke();
                 }
 
+                // ของที่ถือ
                 if (ch.heldTier > 0) {
                     if (ch.heldTier === 4) {
-                        drawLanternArt(0, -68, 0.65, time);
+                        drawLanternArt(0, -66, 0.62, time);
                     } else {
-                        drawKrathongArt(0, -54, ch.heldTier, 0.75, time);
+                        drawKrathongArt(0, -52, ch.heldTier, 0.72, time);
                     }
                 }
 
+                // ป้ายชื่อคนส่งของขวัญ
                 if (ch.username) {
-                    const tagY = ch.style.gender === 'F' ? -118 : -110;
+                    const tagY = ch.style.gender === 'F' ? -114 : -106;
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
                     ctx.strokeStyle = '#ffd700';
                     ctx.lineWidth = 1.2;
-                    const textW = Math.max(54, ch.username.length * 7 + 16);
+                    const textW = Math.max(52, ch.username.length * 7 + 16);
                     ctx.beginPath();
-                    ctx.roundRect(-textW / 2, tagY - 16, textW, 18, 9);
+                    ctx.roundRect(-textW / 2, tagY - 15, textW, 17, 8.5);
                     ctx.fill();
                     ctx.stroke();
 
                     ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 11px sans-serif';
+                    ctx.font = 'bold 10.5px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.fillText(ch.username, 0, tagY - 3);
                 }
@@ -446,14 +540,14 @@
             }
 
             // ==========================================
-            // 3. กระทง / โคมลอย / พลุ
+            // 4. วาดกระทง โคมลอย และระบบจัดการอนุภาคพลุ (Particle Pool)
             // ==========================================
             function drawKrathongArt(x, y, tier, scale, time) {
                 ctx.save();
                 ctx.translate(x, y);
                 ctx.scale(scale, scale);
 
-                const glowR = tier >= 3 ? 34 : 20;
+                const glowR = tier >= 3 ? 32 : 19;
                 const glow = ctx.createRadialGradient(0, -8, 2, 0, -8, glowR);
                 glow.addColorStop(0, tier >= 3 ? 'rgba(255, 225, 80, 0.85)' : 'rgba(255, 190, 60, 0.6)');
                 glow.addColorStop(1, 'rgba(255, 180, 0, 0)');
@@ -512,12 +606,12 @@
                 ctx.translate(x, y);
                 ctx.scale(scale, scale);
 
-                const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 32);
+                const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 30);
                 glow.addColorStop(0, 'rgba(255, 180, 50, 0.85)');
                 glow.addColorStop(1, 'rgba(255, 120, 0, 0)');
                 ctx.fillStyle = glow;
                 ctx.beginPath();
-                ctx.arc(0, 0, 32, 0, Math.PI * 2);
+                ctx.arc(0, 0, 30, 0, Math.PI * 2);
                 ctx.fill();
 
                 const bodyGrad = ctx.createLinearGradient(0, -18, 0, 14);
@@ -537,33 +631,47 @@
 
             const floatingKrathongs = [];
             const floatingLanterns = [];
-            const fireworks = [];
+            const fireworkParticles = [];
+            const MAX_PARTICLES = 450; // จำกัดจำนวนอนุภาคป้องกันอาการกระตุกบนมือถือ
 
             function spawnFirework(x, y, color) {
-                const particles = [];
-                for (let i = 0; i < 42; i++) {
-                    const angle = (Math.PI * 2 * i) / 42;
-                    const speed = Math.random() * 2.6 + 1.2;
-                    particles.push({
+                if (fireworkParticles.length > MAX_PARTICLES) return;
+                const count = 36;
+                for (let i = 0; i < count; i++) {
+                    const angle = (Math.PI * 2 * i) / count;
+                    const speed = Math.random() * 2.5 + 1.1;
+                    fireworkParticles.push({
                         x, y,
                         vx: Math.cos(angle) * speed,
                         vy: Math.sin(angle) * speed,
                         alpha: 1,
+                        decay: Math.random() * 0.012 + 0.012,
                         color
                     });
                 }
-                fireworks.push(particles);
             }
 
             // ==========================================
-            // 4. เสียงเพลงรำวงวันลอยกระทง
+            // 8. ระบบเสียงรำวงวันลอยกระทงที่เปิด-ปิดได้สมบูรณ์
             // ==========================================
             let audioCtx = null;
             let songTimer = null;
+            let activeNodes = [];
 
             function initAudio() {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if (audioCtx.state === 'suspended') audioCtx.resume();
+            }
+
+            function stopAllAudio() {
+                if (songTimer) {
+                    clearTimeout(songTimer);
+                    songTimer = null;
+                }
+                activeNodes.forEach(node => {
+                    try { node.stop(); node.disconnect(); } catch (e) {}
+                });
+                activeNodes = [];
             }
 
             const loyKrathongSong = [
@@ -581,7 +689,8 @@
 
             let noteIdx = 0;
             function playNextSongNote() {
-                if (!soundEnabled || !audioCtx) return;
+                if (!soundEnabled) return;
+                initAudio();
                 const note = loyKrathongSong[noteIdx];
                 const now = audioCtx.currentTime;
 
@@ -591,7 +700,7 @@
                 osc.frequency.setValueAtTime(note.f, now);
 
                 gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(0.14, now + 0.03);
+                gain.gain.linearRampToValueAtTime(0.13, now + 0.03);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + note.d * 0.95);
 
                 osc.connect(gain);
@@ -599,17 +708,26 @@
                 osc.start(now);
                 osc.stop(now + note.d);
 
+                activeNodes.push(osc);
+                osc.onended = () => {
+                    activeNodes = activeNodes.filter(n => n !== osc);
+                };
+
                 if (noteIdx % 2 === 0) {
                     const chingOsc = audioCtx.createOscillator();
                     const chingGain = audioCtx.createGain();
                     chingOsc.type = 'sine';
                     chingOsc.frequency.setValueAtTime(noteIdx % 4 === 0 ? 2400 : 1800, now);
-                    chingGain.gain.setValueAtTime(0.03, now);
+                    chingGain.gain.setValueAtTime(0.025, now);
                     chingGain.gain.exponentialRampToValueAtTime(0.0001, now + (noteIdx % 4 === 0 ? 0.25 : 0.08));
                     chingOsc.connect(chingGain);
                     chingGain.connect(audioCtx.destination);
                     chingOsc.start(now);
                     chingOsc.stop(now + 0.25);
+                    activeNodes.push(chingOsc);
+                    chingOsc.onended = () => {
+                        activeNodes = activeNodes.filter(n => n !== chingOsc);
+                    };
                 }
 
                 noteIdx = (noteIdx + 1) % loyKrathongSong.length;
@@ -625,15 +743,15 @@
                 if (tier >= 5) {
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(160, now);
-                    osc.frequency.exponentialRampToValueAtTime(35, now + 0.6);
-                    gain.gain.setValueAtTime(0.32, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                    osc.frequency.exponentialRampToValueAtTime(35, now + 0.55);
+                    gain.gain.setValueAtTime(0.28, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
                 } else {
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(587.33, now);
                     osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.35);
-                    gain.gain.setValueAtTime(0.22, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
                 }
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
@@ -655,14 +773,13 @@
                 if (soundEnabled) {
                     initAudio();
                     if (!songTimer) playNextSongNote();
-                } else if (songTimer) {
-                    clearTimeout(songTimer);
-                    songTimer = null;
+                } else {
+                    stopAllAudio();
                 }
             });
 
             // ==========================================
-            // 5. Trigger ลอยกระทง
+            // 5 & 6. ระบบคิวกิจกรรม (Queue) + กันข้อมูลซ้ำ (Deduplication)
             // ==========================================
             const giftTierMap = {
                 'Rose': 1, 'TikTok': 1,
@@ -674,8 +791,49 @@
                 'Universe': 7
             };
 
-            function triggerLoyKrathong(username, giftName, forcedTier = null) {
+            const giftQueue = [];
+            const processedEvents = new Set();
+
+            function updateQueueDisplay() {
+                queueText.innerText = `| คิวรอ: ${giftQueue.length}`;
+            }
+
+            function assignTaskToIdleCharacter(task) {
+                const idleChars = characters.filter(c => c.state === 'idle');
+                if (idleChars.length === 0) return false;
+
+                // เลือกตัวละครที่ว่างและใกล้สะพานที่ว่างที่สุด
+                const ch = idleChars[Math.floor(Math.random() * idleChars.length)];
+                ch.state = 'alignToBridge';
+                ch.heldTier = task.tier;
+                ch.username = task.username;
+                ch.style = generateRandomStyle();
+                return true;
+            }
+
+            function processQueue() {
+                while (giftQueue.length > 0) {
+                    const nextTask = giftQueue[0];
+                    if (assignTaskToIdleCharacter(nextTask)) {
+                        giftQueue.shift();
+                        updateQueueDisplay();
+                    } else {
+                        break; // รอตัวละครเดินกลับมาก่อน
+                    }
+                }
+            }
+
+            function enqueueLoyKrathong(username, giftName, forcedTier = null, eventId = null) {
+                // ป้องกัน Event ซ้ำซ้อนภายใน 5 วินาที
+                if (eventId) {
+                    if (processedEvents.has(eventId)) return;
+                    processedEvents.add(eventId);
+                    setTimeout(() => processedEvents.delete(eventId), 5000);
+                }
+
+                const safeUser = (typeof username === 'string' && username.trim()) ? username.trim().slice(0, 18) : 'ผู้ร่วมงาน';
                 const tier = forcedTier || giftTierMap[giftName] || 1;
+
                 totalCount++;
                 totalCountEl.innerText = totalCount.toLocaleString();
                 totalCountEl.classList.add('counter-pop');
@@ -683,49 +841,74 @@
 
                 playGiftFx(tier);
 
-                const idleChars = characters.filter(c => c.state === 'idle');
-                const ch = idleChars.length > 0
-                    ? idleChars[Math.floor(Math.random() * idleChars.length)]
-                    : characters[Math.floor(Math.random() * characters.length)];
-
-                ch.state = 'walkingUp';
-                ch.heldTier = tier;
-                ch.username = username;
-                ch.style = generateRandomStyle();
+                giftQueue.push({ username: safeUser, tier });
+                updateQueueDisplay();
+                processQueue();
             }
 
-            if (socket) {
-                socket.on('new_gift', (data) => {
-                    triggerLoyKrathong(data.username, data.giftName);
+            // ==========================================
+            // 10. Socket.IO Connection & Validation
+            // ==========================================
+            if (typeof io !== 'undefined') {
+                const socket = io({ reconnection: true, reconnectionDelay: 1500 });
+
+                socket.on('connect', () => {
+                    connDot.className = 'dot online';
+                    connText.innerText = 'เชื่อมต่อ TikTok Live';
                 });
+
+                socket.on('disconnect', () => {
+                    connDot.className = 'dot offline';
+                    connText.innerText = 'ขาดการเชื่อมต่อ (กำลังต่อใหม่...)';
+                });
+
+                socket.on('connect_error', () => {
+                    connDot.className = 'dot offline';
+                    connText.innerText = 'เชื่อมต่อเซิร์ฟเวอร์ขัดข้อง';
+                });
+
+                socket.on('new_gift', (data) => {
+                    if (!data || typeof data !== 'object') return;
+                    const eventId = data.msgId || `${data.username}_${data.giftName}_${Math.floor(Date.now() / 1000)}`;
+                    enqueueLoyKrathong(data.username, data.giftName, null, eventId);
+                });
+            } else {
+                connDot.className = 'dot offline';
+                connText.innerText = 'โหมดออฟไลน์ / ทดสอบ';
             }
 
             document.querySelectorAll('.btn-tier[data-tier]').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const tier = parseInt(btn.getAttribute('data-tier'));
-                    const mockUsers = ['พี่โอ๊ต', 'สายมู', 'น้องแป้ง', 'NARAPONZ'];
+                    const tier = parseInt(btn.getAttribute('data-tier'), 10);
+                    const mockUsers = ['พี่โอ๊ต', 'สายมู', 'น้องแป้ง', 'NARAPONZ', 'คุณหญิง'];
                     const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-                    triggerLoyKrathong(randomUser, '', tier);
+                    enqueueLoyKrathong(randomUser, '', tier);
                 });
             });
 
             // ==========================================
-            // 6. Main Loop (ความเร็วช้าลง 20%)
+            // 3, 4, 7. Main Animation Loop (เดินตามสะพาน & ลอยเป็นธรรมชาติ)
             // ==========================================
+            const WALK_SPEED = 0.00175;
+            const STEP_PHASE = 0.175;
+
             function loop(time) {
                 requestAnimationFrame(loop);
                 ctx.clearRect(0, 0, W, H);
 
-                // 1. วาดฉากหลังรูปถ่าย + ลานไม้และสะพานท่าน้ำ
+                // 1. วาดฉากหลังและสะพานท่าน้ำ
                 drawBackgroundAndPier(time);
 
-                // 2. กระทงลอยออกไปกลางแม่น้ำจากปลายสะพานท่าน้ำ
+                // 2. อัปเดตกระทงลอยในแม่น้ำ (ลอยพริ้วตามกระแสน้ำธรรมชาติ)
                 for (let i = floatingKrathongs.length - 1; i >= 0; i--) {
                     const k = floatingKrathongs[i];
-                    k.y -= 0.0004; // ความเร็วช้าลง 20%
-                    k.x -= 0.00018; // ลอยตามกระแสน้ำไปทางซ้าย
-                    const progress = (0.565 - k.y) / (0.565 - 0.45);
-                    const scale = Math.max(0.18, 0.65 * (1 - progress * 0.7));
+                    k.age += 0.016;
+                    // ค่อยๆ ลอยออกไปกลางน้ำและไหลไปทางซ้ายตามกระแสน้ำเจ้าพระยา
+                    k.y -= 0.00036 * (1 - k.progress * 0.35);
+                    k.x += (k.driftX + Math.sin(time * 0.0018 + k.seed) * 0.00028);
+
+                    k.progress = Math.min(1, Math.max(0, (PIER_WATER_Y - k.y) / (PIER_WATER_Y - 0.45)));
+                    const scale = Math.max(0.16, 0.65 * (1 - k.progress * 0.72));
 
                     drawKrathongArt(k.x * W, k.y * H, k.tier, scale, time);
 
@@ -734,12 +917,12 @@
                     }
                 }
 
-                // 3. โคมลอยขึ้นฟ้า
+                // 3. อัปเดตโคมลอยขึ้นฟ้า
                 for (let i = floatingLanterns.length - 1; i >= 0; i--) {
                     const l = floatingLanterns[i];
-                    l.y -= 0.0011;
-                    l.x += Math.sin(time * 0.0024 + l.seed) * 0.0005;
-                    const scale = Math.max(0.18, 0.75 * (l.y / 0.55));
+                    l.y -= 0.00105;
+                    l.x += Math.sin(time * 0.0022 + l.seed) * 0.00045;
+                    const scale = Math.max(0.16, 0.72 * (l.y / 0.58));
                     drawLanternArt(l.x * W, l.y * H, scale, time);
 
                     if (l.y < -0.05) {
@@ -747,23 +930,46 @@
                     }
                 }
 
-                // 4. เดินจากลานไม้ ขึ้นสะพานท่าน้ำไปลอยกระทงที่ปลายสะพาน (ช้าลง 20%)
+                // 4. อัปเดตการเดินของตัวละครให้ตรงแนวสะพานท่าน้ำ 100%
                 const sortedChars = [...characters].sort((a, b) => a.y - b.y);
                 sortedChars.forEach(ch => {
-                    if (ch.state === 'walkingUp') {
-                        ch.walkPhase += 0.175;
-                        ch.y -= 0.00175;
-                        if (ch.y <= ch.targetWaterY) {
-                            ch.y = ch.targetWaterY;
+                    if (ch.state === 'alignToBridge') {
+                        // ขั้นที่ 1: เดินบนลานไม้ไปให้ตรงแนวสะพานท่าน้ำก่อน
+                        ch.walkPhase += STEP_PHASE;
+                        const dx = ch.bridgeX - ch.x;
+                        if (Math.abs(dx) <= WALK_SPEED * 1.2) {
+                            ch.x = ch.bridgeX;
+                            ch.state = 'walkOnBridge';
+                        } else {
+                            ch.x += Math.sign(dx) * WALK_SPEED * 1.1;
+                        }
+                    } else if (ch.state === 'walkOnBridge') {
+                        // ขั้นที่ 2: เดินตรงขึ้นไปบนสะพานไม้จนถึงขอบปลายสะพาน
+                        ch.walkPhase += STEP_PHASE;
+                        ch.y -= WALK_SPEED;
+                        if (ch.y <= PIER_WATER_Y) {
+                            ch.y = PIER_WATER_Y;
+
                             if (ch.heldTier === 4) {
-                                floatingLanterns.push({ x: ch.x, y: ch.y - 0.04, seed: Math.random() * 10 });
+                                floatingLanterns.push({
+                                    x: ch.x,
+                                    y: ch.y - 0.04,
+                                    seed: Math.random() * 10
+                                });
                             } else {
-                                floatingKrathongs.push({ x: ch.x, y: ch.y - 0.005, tier: ch.heldTier, seed: Math.random() * 10 });
+                                floatingKrathongs.push({
+                                    x: ch.x + (Math.random() - 0.5) * 0.015,
+                                    y: PIER_WATER_Y - 0.008,
+                                    tier: ch.heldTier,
+                                    driftX: -0.00014 - Math.random() * 0.0001,
+                                    progress: 0,
+                                    seed: Math.random() * 10
+                                });
                             }
 
                             if (ch.heldTier >= 5) {
                                 const fwColors = ['#ff0055', '#00e5ff', '#ffd700', '#ff9f1c', '#b5179e'];
-                                const count = ch.heldTier === 5 ? 2 : (ch.heldTier === 6 ? 4 : 7);
+                                const count = ch.heldTier === 5 ? 2 : (ch.heldTier === 6 ? 4 : 6);
                                 for (let b = 0; b < count; b++) {
                                     setTimeout(() => {
                                         spawnFirework(
@@ -776,42 +982,51 @@
                             }
 
                             ch.heldTier = 0;
-                            ch.state = 'walkingBack';
+                            ch.state = 'returnFromBridge';
                         }
-                    } else if (ch.state === 'walkingBack') {
-                        ch.walkPhase += 0.175;
-                        ch.y += 0.00175;
+                    } else if (ch.state === 'returnFromBridge') {
+                        // ขั้นที่ 3: เดินลงจากสะพานท่าน้ำกลับมาที่ระดับแถวยืนบนลานไม้
+                        ch.walkPhase += STEP_PHASE;
+                        ch.y += WALK_SPEED;
                         if (ch.y >= ch.homeY) {
                             ch.y = ch.homeY;
+                            ch.state = 'returnHome';
+                        }
+                    } else if (ch.state === 'returnHome') {
+                        // ขั้นที่ 4: เดินกลับเข้าประจำจุดยืนรอเดิม
+                        ch.walkPhase += STEP_PHASE;
+                        const dx = ch.homeX - ch.x;
+                        if (Math.abs(dx) <= WALK_SPEED * 1.2) {
+                            ch.x = ch.homeX;
                             ch.state = 'idle';
                             ch.username = '';
+                            processQueue(); // ว่างแล้ว ดึงคิวถัดไปทันที
+                        } else {
+                            ch.x += Math.sign(dx) * WALK_SPEED * 1.1;
                         }
                     }
 
                     drawCartoonCharacter(ch, time);
                 });
 
-                // 5. พลุ
-                for (let i = fireworks.length - 1; i >= 0; i--) {
-                    const fw = fireworks[i];
-                    let alive = false;
-                    fw.forEach(p => {
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.vy += 0.035;
-                        p.alpha -= 0.016;
-                        if (p.alpha > 0) {
-                            alive = true;
-                            ctx.fillStyle = p.color;
-                            ctx.globalAlpha = p.alpha;
-                            ctx.beginPath();
-                            ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-                            ctx.fill();
-                        }
-                    });
-                    ctx.globalAlpha = 1;
-                    if (!alive) fireworks.splice(i, 1);
+                // 5. อัปเดตอนุภาคพลุ
+                for (let i = fireworkParticles.length - 1; i >= 0; i--) {
+                    const p = fireworkParticles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.035;
+                    p.alpha -= p.decay;
+                    if (p.alpha > 0) {
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = p.alpha;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 2.4, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        fireworkParticles.splice(i, 1);
+                    }
                 }
+                ctx.globalAlpha = 1;
             }
 
             requestAnimationFrame(loop);
